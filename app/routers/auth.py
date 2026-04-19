@@ -3,12 +3,10 @@ from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
 from app.models.utilisateur import Utilisateur
-from app.schemas.user import UserRegister, UserLogin
-from app.security.password import hash_password, verify_password
+from app.schemas.user import UserLogin, UserRegister
 from app.security.jwt import create_access_token
+from app.security.password import hash_password, verify_password
 
-
-# ✅ LE ROUTER DOIT ÊTRE DÉFINI AVANT LES ROUTES
 router = APIRouter(
     prefix="/auth",
     tags=["Authentification"]
@@ -23,7 +21,6 @@ def get_db():
         db.close()
 
 
-# ✅ ROUTE REGISTER
 @router.post("/register")
 def register_user(
     user: UserRegister,
@@ -47,7 +44,7 @@ def register_user(
         email=user.email,
         mot_de_passe_hash=hash_password(user.password),
         role="utilisateur",
-        actif=False  # ✅ en attente de validation admin
+        actif=False
     )
 
     db.add(new_user)
@@ -55,22 +52,19 @@ def register_user(
     db.refresh(new_user)
 
     return {
-        "message": "Demande d’inscription envoyée. En attente de validation.",
+        "message": "Demande d'inscription envoyée. En attente de validation.",
         "user_id": new_user.id
     }
 
 
-# ✅ ROUTE LOGIN
 @router.post("/login")
 def login_user(
     credentials: UserLogin,
     db: Session = Depends(get_db)
 ):
-    user = (
-        db.query(Utilisateur)
-        .filter(Utilisateur.email == credentials.email)
+    user = db.query(Utilisateur)\
+        .filter(Utilisateur.email == credentials.email)\
         .first()
-    )
 
     if not user:
         raise HTTPException(
