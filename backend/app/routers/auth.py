@@ -4,11 +4,11 @@ from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.models.utilisateur import Utilisateur
 from app.schemas.user import UserRegister, UserLogin
+from app.security.dependencies import get_current_admin
 from app.security.password import hash_password, verify_password
 from app.security.jwt import create_access_token
 
 
-# ✅ LE ROUTER DOIT ÊTRE DÉFINI AVANT LES ROUTES
 router = APIRouter(
     prefix="/auth",
     tags=["Authentification"]
@@ -23,7 +23,6 @@ def get_db():
         db.close()
 
 
-# ✅ ROUTE REGISTER
 @router.post("/register")
 def register_user(
     user: UserRegister,
@@ -47,7 +46,7 @@ def register_user(
         email=user.email,
         mot_de_passe_hash=hash_password(user.password),
         role="utilisateur",
-        actif=False  # ✅ en attente de validation admin
+        actif=False
     )
 
     db.add(new_user)
@@ -60,7 +59,6 @@ def register_user(
     }
 
 
-# ✅ ROUTE LOGIN
 @router.post("/login")
 def login_user(
     credentials: UserLogin,
