@@ -1,22 +1,12 @@
-
 from fastapi import FastAPI
-from app.routers import auth
-from sqlalchemy import text
 
-from .database import Base, engine
-from .models.utilisateur import Utilisateur  # ← OBLIGATOIRE
+from app.routers.auth import router as auth_router
+from app.routers.admin import router as admin_router
 
-app = FastAPI()
-app.include_router(auth.router)
+app = FastAPI(
+    title="Application de gestion d’accès et de réservation",
+    version="1.0"
+)
 
-@app.get("/db-test")
-def db_test():
-    try:
-        with engine.connect() as connection:
-            connection.execute(text("SELECT 1"))
-        return {"database": "Connexion réussie"}
-    except Exception as e:
-        return {"error": str(e)}
-
-# Création automatique des tables
-Base.metadata.create_all(bind=engine)
+app.include_router(auth_router)
+app.include_router(admin_router)
