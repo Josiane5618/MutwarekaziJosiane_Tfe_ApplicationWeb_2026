@@ -2,12 +2,12 @@ from fastapi import FastAPI
 
 from app.routers.auth import router as auth_router
 from app.routers.admin import router as admin_router
-from app.models import donnee_faciale
+from app.routers.access import router as access_router
 
 app = FastAPI(
-    title="Application de gestion d’accès et de réservation",
-    version="1.0"
+    title="Système de gestion d’accès et de réservation"
 )
 
 app.include_router(auth_router)
 app.include_router(admin_router)
+app.include_router(access_router)
