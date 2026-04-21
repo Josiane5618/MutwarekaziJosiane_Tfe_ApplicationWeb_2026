@@ -4,6 +4,7 @@ import numpy as np
 
 from app.database import SessionLocal
 from app.models.donnee_faciale import DonneeFaciale
+from app.models.log_acces import LogAcces
 from app.security.dependencies import get_current_user
 from app.face_recognition.engine import extract_face_encoding
 
@@ -11,6 +12,7 @@ router = APIRouter(
     prefix="/access",
     tags=["Contrôle d’accès"]
 )
+
 
 def get_db():
     db = SessionLocal()
@@ -50,6 +52,22 @@ async def verify_access(
     SEUIL = 0.5
 
     if distance < SEUIL:
-        return {"resultat": "ACCES_AUTORISE", "distance": float(distance)}
+        resultat = "ACCES_AUTORISE"
     else:
-        return {"resultat": "ACCES_REFUSE", "distance": float(distance)}
+        resultat = "ACCES_REFUSE"
+
+    # ✅ Journalisation (Sprint 5.4)
+    log = LogAcces(
+        utilisateur_id=user["user_id"],
+        resultat=resultat,
+        distance=float(distance)
+    )
+
+    db.add(log)
+    db.commit()
+
+    # ✅ RETOUR À L’INTÉRIEUR DE LA FONCTION
+    return {
+        "resultat": resultat,
+        "distance": float(distance)
+    }
