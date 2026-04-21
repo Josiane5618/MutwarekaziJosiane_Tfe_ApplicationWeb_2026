@@ -5,6 +5,7 @@ from datetime import date, time
 from app.database import SessionLocal
 from app.models.salle import Salle
 from app.models.reservation import Reservation
+from app.models.notification import Notification
 from app.security.dependencies import get_current_user
 
 router = APIRouter(
@@ -82,6 +83,14 @@ def creer_reservation(
     )
 
     db.add(reservation)
+
+    # ✅ Notification utilisateur
+    notification = Notification(
+        utilisateur_id=user["user_id"],
+        message="Votre réservation de salle a été créée avec succès."
+    )
+    db.add(notification)
+
     db.commit()
 
     return {"message": "Réservation créée avec succès"}
