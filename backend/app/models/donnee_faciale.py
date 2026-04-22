@@ -7,12 +7,10 @@ from app.database import Base
 class DonneeFaciale(Base):
     __tablename__ = "donnees_faciales"
 
-    id = Column(Integer, primary_key=True, index=True)
-    utilisateur_id = Column(Integer, ForeignKey("utilisateurs.id"), nullable=False)
+    id = Column(Integer, primary_key=True)
+    utilisateur_id = Column(Integer, ForeignKey("utilisateurs.id"))
 
-    # Encodage facial (128 floats -> bytes)
+    image = Column(LargeBinary, nullable=True)  # ✅ image brute
     encodage = Column(LargeBinary, nullable=False)
 
     date_enregistrement = Column(DateTime, default=datetime.utcnow)
-
-    utilisateur = relationship("Utilisateur", backref="donnees_faciales")
