@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import date, time
 
-from app.database import SessionLocal
+from app.dependencies import get_db
 from app.models.salle import Salle
 from app.models.reservation import Reservation
 from app.models.notification import Notification
@@ -12,14 +12,6 @@ router = APIRouter(
     prefix="/reservations",
     tags=["Réservations"]
 )
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 @router.get("/salles")
