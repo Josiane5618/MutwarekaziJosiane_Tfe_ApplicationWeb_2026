@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from sqlalchemy.orm import Session
 import numpy as np
 
-from app.database import SessionLocal
+from app.dependencies import get_db
 from app.models.donnee_faciale import DonneeFaciale
 from app.models.log_acces import LogAcces
 from app.models.notification import Notification
@@ -13,14 +13,6 @@ router = APIRouter(
     prefix="/access",
     tags=["Contrôle d’accès"]
 )
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 @router.post("/verify")

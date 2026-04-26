@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.database import SessionLocal
+from app.dependencies import get_db
 from app.models.notification import Notification
 from app.security.dependencies import get_current_user
 
@@ -9,14 +9,6 @@ router = APIRouter(
     prefix="/notifications",
     tags=["Notifications"]
 )
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 @router.get("/")

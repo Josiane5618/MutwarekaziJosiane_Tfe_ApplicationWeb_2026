@@ -1,22 +1,51 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-export default function CameraCapture({ onCapture }) {
+export default function CameraCapture({ onCapture, hasCapture }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
+  const streamRef = useRef(null);
   const [cameraOn, setCameraOn] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [cameraError, setCameraError] = useState("");
 
-  // Activer la caméra
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [previewUrl]);
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+
+    setCameraOn(false);
+  };
+
   const startCamera = async () => {
+    setCameraError("");
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      streamRef.current = stream;
       videoRef.current.srcObject = stream;
       setCameraOn(true);
-    } catch (err) {
-      alert("Impossible d'accéder à la caméra");
+    } catch {
+      setCameraError("Impossible d'acceder a la camera sur cet appareil.");
     }
   };
 
-  // Capturer le visage
   const captureFace = () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -30,8 +59,14 @@ export default function CameraCapture({ onCapture }) {
     canvas.toBlob(
       (blob) => {
         if (blob) {
-          onCapture(blob); // envoie l'image au formulaire parent
-          alert("Visage capturé avec succès");
+          if (previewUrl) {
+            URL.revokeObjectURL(previewUrl);
+          }
+
+          const nextPreviewUrl = URL.createObjectURL(blob);
+          setPreviewUrl(nextPreviewUrl);
+          onCapture(blob);
+          stopCamera();
         }
       },
       "image/jpeg",
@@ -39,37 +74,76 @@ export default function CameraCapture({ onCapture }) {
     );
   };
 
+  const retakeCapture = () => {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl("");
+    }
+
+    onCapture(null);
+    startCamera();
+  };
+
   return (
-    <div style={{ marginTop: "20px" }}>
-      <h4>Capture faciale</h4>
+    <section className="camera-card">
+      <div className="camera-header">
+        <div>
+          <p className="section-label">Verification faciale</p>
+          <h3>Capture webcam</h3>
+        </div>
+        {hasCapture ? <span className="capture-badge">Capture prete</span> : null}
+      </div>
 
-      {!cameraOn && (
-        <button type="button" onClick={startCamera}>
-          Activer la caméra
-        </button>
-      )}
+      <p className="camera-copy">
+        Placez votre visage devant la camera puis capturez une image nette.
+      </p>
 
-      <div style={{ marginTop: "10px" }}>
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          width="300"
-          height="200"
-          style={{ border: "1px solid black" }}
-        />
+      {cameraError ? <div className="feedback feedback-error">{cameraError}</div> : null}
+
+      <div className="camera-preview">
+        {previewUrl ? (
+          <img src={previewUrl} alt="Capture faciale" className="preview-image" />
+        ) : (
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            className={`camera-video ${cameraOn ? "is-active" : ""}`}
+          />
+        )}
+
+        {!cameraOn && !previewUrl ? (
+          <div className="camera-placeholder">
+            La camera n'est pas encore activee.
+          </div>
+        ) : null}
         <canvas ref={canvasRef} style={{ display: "none" }} />
       </div>
 
-      {cameraOn && (
-        <button
-          type="button"
-          onClick={captureFace}
-          style={{ marginTop: "10px" }}
-        >
-          Capturer le visage
-        </button>
-      )}
-    </div>
+      <div className="camera-actions">
+        {!cameraOn && !previewUrl ? (
+          <button className="secondary-button" type="button" onClick={startCamera}>
+            Activer la camera
+          </button>
+        ) : null}
+
+        {cameraOn ? (
+          <>
+            <button className="secondary-button" type="button" onClick={stopCamera}>
+              Fermer la camera
+            </button>
+            <button className="secondary-button" type="button" onClick={captureFace}>
+              Capturer le visage
+            </button>
+          </>
+        ) : null}
+
+        {previewUrl ? (
+          <button className="secondary-button" type="button" onClick={retakeCapture}>
+            Reprendre la photo
+          </button>
+        ) : null}
+      </div>
+    </section>
   );
 }

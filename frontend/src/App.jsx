@@ -1,16 +1,8 @@
-import CameraCapture from "./components/CameraCapture";
+import Register from "./pages/Register";
+import "./App.css";
 
 function App() {
-  const handleCapture = (imageBlob) => {
-    console.log("IMAGE CAPTURÉE :", imageBlob);
-  };
-
-  return (
-    <div style={{ padding: "20px" }}>
-      <h2>Test CameraCapture</h2>
-      <CameraCapture onCapture={handleCapture} />
-    </div>
-  );
+  return <Register />;
 }
 
 export default App;
