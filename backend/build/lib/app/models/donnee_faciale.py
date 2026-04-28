@@ -1,7 +1,8 @@
-from app.database import Base
 from sqlalchemy import Column, Integer, LargeBinary, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from datetime import datetime
+
+from app.database import Base
 
 class DonneeFaciale(Base):
     __tablename__ = "donnees_faciales"

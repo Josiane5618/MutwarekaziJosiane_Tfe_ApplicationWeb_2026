@@ -40,12 +40,3 @@ app.include_router(access_router)
 app.include_router(face_detection_router)
 app.include_router(reservation_router)
 app.include_router(notification_router)
-from fastapi.middleware.cors import CORSMiddleware
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
