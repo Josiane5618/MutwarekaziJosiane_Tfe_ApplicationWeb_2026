@@ -11,10 +11,11 @@ function App() {
     <main className="register-page">
       <section className="register-hero">
         <p className="eyebrow">Gestion d'acces</p>
-        <h1>Creer un compte et le valider cote administrateur</h1>
+        <h1>Piloter les inscriptions, les salles et les acces depuis un meme espace</h1>
         <p className="hero-copy">
-          Le projet permet maintenant d'envoyer une inscription faciale puis de
-          la traiter depuis une interface administrateur locale.
+          Le projet permet maintenant d'envoyer une inscription faciale, de la
+          valider cote administrateur, puis de consulter les salles, les
+          reservations et les logs d'acces depuis le tableau de bord admin.
         </p>
 
         <div className="hero-tabs" aria-label="Navigation principale">
@@ -48,7 +49,7 @@ function App() {
           </div>
           <div className="hero-step">
             <span>2</span>
-            <p>L'administrateur se connecte et examine les demandes.</p>
+            <p>L'administrateur examine les demandes et gere les donnees globales.</p>
           </div>
           <div className="hero-step">
             <span>3</span>

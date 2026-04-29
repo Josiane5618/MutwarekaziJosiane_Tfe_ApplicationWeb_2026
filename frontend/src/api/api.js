@@ -34,6 +34,69 @@ export async function validateUser({ token, userId, accept }) {
   });
 }
 
+export async function getAdminUsers(token) {
+  return fetch(`${API_URL}/admin/users`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+}
+
+export async function getAdminSalles(token) {
+  return fetch(`${API_URL}/admin/salles`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+}
+
+export async function createAdminSalle({ token, data }) {
+  return fetch(`${API_URL}/admin/salles`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(data)
+  });
+}
+
+export async function updateAdminSalle({ token, salleId, data }) {
+  return fetch(`${API_URL}/admin/salles/${salleId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(data)
+  });
+}
+
+export async function deleteAdminSalle({ token, salleId }) {
+  return fetch(`${API_URL}/admin/salles/${salleId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+}
+
+export async function getAdminReservations(token) {
+  return fetch(`${API_URL}/admin/reservations`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+}
+
+export async function getAdminAccessLogs(token) {
+  return fetch(`${API_URL}/admin/access-logs`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+}
+
 export async function getCurrentUser(token) {
   return fetch(`${API_URL}/auth/me`, {
     headers: {
