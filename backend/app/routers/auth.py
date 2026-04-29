@@ -7,6 +7,7 @@ from app.models.donnee_faciale import DonneeFaciale
 from app.models.utilisateur import Utilisateur
 from app.schemas.user import UserLogin
 from app.face_recognition.engine import extract_face_encoding
+from app.security.dependencies import get_current_user
 from app.security.password import hash_password, verify_password
 from app.security.jwt import create_access_token
 
@@ -110,4 +111,31 @@ def login_user(
     return {
         "access_token": token,
         "token_type": "bearer"
+    }
+
+
+@router.get("/me")
+def get_me(
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user)
+):
+    current_user = (
+        db.query(Utilisateur)
+        .filter(Utilisateur.id == user["user_id"])
+        .first()
+    )
+
+    if not current_user:
+        raise HTTPException(
+            status_code=404,
+            detail="Utilisateur introuvable"
+        )
+
+    return {
+        "id": current_user.id,
+        "prenom": current_user.prenom,
+        "nom": current_user.nom,
+        "email": current_user.email,
+        "role": current_user.role,
+        "actif": current_user.actif,
     }

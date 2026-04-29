@@ -69,6 +69,11 @@ JWT_ACCESS_TOKEN_EXPIRE_MINUTES = get_int_env(
     60
 )
 
+DEFAULT_ADMIN_EMAIL = get_env("DEFAULT_ADMIN_EMAIL", "admin@gestion-acces.dev")
+DEFAULT_ADMIN_PASSWORD = get_env("DEFAULT_ADMIN_PASSWORD", "Admin123!")
+DEFAULT_ADMIN_PRENOM = get_env("DEFAULT_ADMIN_PRENOM", "Admin")
+DEFAULT_ADMIN_NOM = get_env("DEFAULT_ADMIN_NOM", "Local")
+
 API_HOST = get_env("API_HOST", "127.0.0.1")
 API_PORT = get_int_env("API_PORT", 8000)
 API_RELOAD = get_bool_env("API_RELOAD", True)

@@ -69,6 +69,30 @@
   font-size: 1.03rem;
 }
 
+.hero-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.hero-tab {
+  border: 1px solid rgba(17, 36, 51, 0.12);
+  background: rgba(255, 255, 255, 0.78);
+  color: #173145;
+  padding: 12px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.hero-tab.is-active {
+  background: linear-gradient(135deg, #0b7a75, #155eef);
+  color: #fff;
+  box-shadow: 0 14px 28px rgba(21, 94, 239, 0.16);
+}
+
 .hero-steps {
   display: grid;
   gap: 16px;
@@ -145,6 +169,15 @@
   box-shadow: 0 0 0 4px rgba(27, 132, 255, 0.14);
 }
 
+.field-select {
+  width: 100%;
+  border: 1px solid #c9d7e2;
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: #fff;
+  color: #112433;
+}
+
 .field-full {
   grid-column: 1 / -1;
 }
@@ -218,7 +251,8 @@
 }
 
 .submit-button,
-.secondary-button {
+.secondary-button,
+.danger-button {
   border: none;
   border-radius: 14px;
   padding: 14px 18px;
@@ -227,7 +261,8 @@
 }
 
 .submit-button:hover,
-.secondary-button:hover {
+.secondary-button:hover,
+.danger-button:hover {
   transform: translateY(-1px);
 }
 
@@ -248,6 +283,174 @@
   background: #fff;
   color: #163247;
   border: 1px solid #c9d7e2;
+}
+
+.danger-button {
+  background: rgba(197, 44, 72, 0.1);
+  color: #9f2941;
+  border: 1px solid rgba(197, 44, 72, 0.18);
+}
+
+.admin-panel {
+  display: grid;
+  gap: 20px;
+}
+
+.user-dashboard {
+  display: grid;
+  gap: 20px;
+}
+
+.panel-header-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.toolbar-inline {
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.credential-card,
+.empty-state,
+.request-card {
+  border-radius: 20px;
+  border: 1px solid rgba(17, 36, 51, 0.08);
+  background: #f8fbfd;
+}
+
+.credential-card {
+  padding: 18px 20px;
+}
+
+.credential-label,
+.request-name,
+.request-email,
+.credential-value {
+  margin: 0;
+}
+
+.credential-label {
+  font-weight: 700;
+  color: #18354a;
+}
+
+.credential-value {
+  margin-top: 6px;
+  color: #406073;
+}
+
+.request-list {
+  display: grid;
+  gap: 16px;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.info-card {
+  border-radius: 20px;
+  border: 1px solid rgba(17, 36, 51, 0.08);
+  background: #f8fbfd;
+  padding: 18px 20px;
+}
+
+.info-label,
+.info-title,
+.info-meta {
+  margin: 0;
+}
+
+.info-label {
+  color: #0b7a75;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.info-title {
+  margin-top: 10px;
+  color: #112433;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.info-meta {
+  margin-top: 8px;
+  color: #4a6172;
+}
+
+.reservation-layout {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 16px;
+}
+
+.stack-list {
+  display: grid;
+  gap: 12px;
+}
+
+.stack-item {
+  border-radius: 16px;
+  border: 1px solid rgba(17, 36, 51, 0.08);
+  background: #fff;
+  padding: 14px 16px;
+}
+
+.request-card {
+  padding: 18px 20px;
+  display: grid;
+  gap: 16px;
+}
+
+.request-card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.request-name {
+  font-weight: 700;
+  color: #112433;
+}
+
+.request-email {
+  margin-top: 6px;
+  color: #4a6172;
+}
+
+.request-badge {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(21, 94, 239, 0.08);
+  color: #155eef;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.request-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.empty-state {
+  padding: 28px;
+  text-align: center;
+  color: #4a6172;
 }
 
 .feedback {
@@ -290,5 +493,19 @@
   .camera-header {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .panel-header-row,
+  .request-card-header {
+    flex-direction: column;
+  }
+
+  .dashboard-grid,
+  .reservation-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .toolbar {
+    justify-content: stretch;
   }
 }

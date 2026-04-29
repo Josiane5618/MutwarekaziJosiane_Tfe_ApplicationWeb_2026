@@ -118,3 +118,26 @@ def test_login_returns_token_for_active_user(db_session, monkeypatch):
 
     assert "access_token" in response
     assert response["token_type"] == "bearer"
+
+
+def test_get_me_returns_current_user(db_session):
+    user = Utilisateur(
+        prenom="Josiane",
+        nom="Mutwarekazi",
+        email="profile@example.com",
+        mot_de_passe_hash="hashed-password",
+        role="utilisateur",
+        actif=True
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+
+    response = auth_router.get_me(
+        db=db_session,
+        user={"user_id": user.id, "role": "utilisateur"}
+    )
+
+    assert response["email"] == "profile@example.com"
+    assert response["prenom"] == "Josiane"
+    assert response["role"] == "utilisateur"
