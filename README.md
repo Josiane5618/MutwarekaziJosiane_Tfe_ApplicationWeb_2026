@@ -25,9 +25,11 @@ Le depot contient deux applications :
 │   │   ├── schemas/
 │   │   ├── security/
 │   │   └── utils/
+│   ├── .python-version
 │   ├── run.py
+│   ├── pyproject.toml
 │   ├── test_face_recognition.py
-│   └── requirements.txt
+│   └── uv.lock
 ├── frontend/
 │   ├── src/
 │   │   ├── api/
@@ -46,7 +48,7 @@ Le depot contient deux applications :
 - Frontend: React + Vite
 - Backend: FastAPI + SQLAlchemy
 - Base de donnees: PostgreSQL
-- Securite: JWT + hash mot de passe avec `passlib`
+- Securite: JWT + hash mot de passe avec `bcrypt`
 - Reconnaissance faciale: `dlib`, `opencv`, `numpy`
 
 ## Comment lire le code rapidement
@@ -182,7 +184,7 @@ L'utilisateur authentifie peut :
 - la configuration sensible est sortie du code source
 - le frontend affiche maintenant une vraie interface d'inscription
 - la version de Node attendue est documentee et verifiee automatiquement
-- le backend dispose maintenant d'un `requirements.txt`
+- le backend est maintenant gere avec `uv`
 - `get_db()` est centralise dans `backend/app/dependencies.py`
 
 ## Structure cible simple
@@ -234,12 +236,16 @@ Prerequis frontend :
 
 ### Backend
 
+Installer `uv` si besoin :
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
 ```bash
 cd backend
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python run.py
+uv sync
+uv run python run.py
 ```
 
 L'API utilise les valeurs definies dans `backend/.env`.
@@ -247,7 +253,13 @@ L'API utilise les valeurs definies dans `backend/.env`.
 Pour activer la reconnaissance faciale complete sur une machine qui supporte bien les dependances natives :
 
 ```bash
-pip install -r requirements-face.txt
+uv sync --extra face
+```
+
+Pour inclure en une fois les dependances backend de developpement et la partie faciale :
+
+```bash
+uv sync --extra face
 ```
 
 Verification rapide :
@@ -273,16 +285,14 @@ Dans PowerShell :
 
 ```powershell
 cd backend
-py -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-python run.py
+uv sync
+uv run python run.py
 ```
 
-Si PowerShell bloque l'activation du venv :
+Si `uv` n'est pas encore installe, une option simple sous Windows est :
 
 ```powershell
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+winget install --id=astral-sh.uv -e
 ```
 
 Verification rapide :
@@ -295,11 +305,11 @@ curl http://127.0.0.1:8000/health
 
 - `opencv-python` est generalement plus simple a installer sur Windows car des wheels precompiles existent
 - `dlib` est le point le plus sensible : selon la machine, il peut demander une compilation ou des outils natifs supplementaires
-- `pip install -r requirements-face.txt` est donc a tester directement sur le PC Windows cible
+- `uv sync --extra face` est donc a tester directement sur le PC Windows cible
 
 Recommendation pratique :
-- valider d'abord le backend standard avec `requirements.txt`
-- ajouter ensuite `requirements-face.txt`
+- valider d'abord le backend standard avec `uv sync`
+- ajouter ensuite l'extra facial avec `uv sync --extra face`
 - ne pas copier un `.venv` Linux vers Windows
 - recreer l'environnement Python directement sur le PC Windows
 
@@ -314,7 +324,7 @@ Pour les lancer :
 
 ```bash
 cd backend
-pytest tests -q
+uv run pytest tests -q
 ```
 
 ## En resume

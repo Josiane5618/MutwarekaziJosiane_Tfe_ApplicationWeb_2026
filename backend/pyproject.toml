@@ -1,0 +1,34 @@
+[project]
+name = "gestion-acces-backend"
+version = "0.1.0"
+description = "Backend FastAPI pour l'application de gestion d'acces"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "sqlalchemy",
+    "psycopg[binary]",
+    "python-jose[cryptography]",
+    "bcrypt",
+    "pydantic[email]",
+    "python-multipart",
+    "numpy",
+]
+
+[project.optional-dependencies]
+face = [
+    "opencv-python",
+    "dlib",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "httpx",
+]
+
+[tool.uv]
+default-groups = ["dev"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
