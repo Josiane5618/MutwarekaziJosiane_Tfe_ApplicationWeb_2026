@@ -42,7 +42,7 @@ export default function CameraCapture({ onCapture, hasCapture }) {
       videoRef.current.srcObject = stream;
       setCameraOn(true);
     } catch {
-      setCameraError("Impossible d'acceder a la camera sur cet appareil.");
+      setCameraError("Impossible d'accéder à la caméra sur cet appareil.");
     }
   };
 
@@ -88,14 +88,14 @@ export default function CameraCapture({ onCapture, hasCapture }) {
     <section className="camera-card">
       <div className="camera-header">
         <div>
-          <p className="section-label">Verification faciale</p>
+          <p className="section-label">Vérification faciale</p>
           <h3>Capture webcam</h3>
         </div>
-        {hasCapture ? <span className="capture-badge">Capture prete</span> : null}
+        {hasCapture ? <span className="capture-badge">Capture prête</span> : null}
       </div>
 
       <p className="camera-copy">
-        Placez votre visage devant la camera puis capturez une image nette.
+        Placez votre visage devant la caméra puis capturez une image nette.
       </p>
 
       {cameraError ? <div className="feedback feedback-error">{cameraError}</div> : null}
@@ -114,7 +114,7 @@ export default function CameraCapture({ onCapture, hasCapture }) {
 
         {!cameraOn && !previewUrl ? (
           <div className="camera-placeholder">
-            La camera n'est pas encore activee.
+            La caméra n'est pas encore activée.
           </div>
         ) : null}
         <canvas ref={canvasRef} style={{ display: "none" }} />
@@ -123,14 +123,14 @@ export default function CameraCapture({ onCapture, hasCapture }) {
       <div className="camera-actions">
         {!cameraOn && !previewUrl ? (
           <button className="secondary-button" type="button" onClick={startCamera}>
-            Activer la camera
+            Activer la caméra
           </button>
         ) : null}
 
         {cameraOn ? (
           <>
             <button className="secondary-button" type="button" onClick={stopCamera}>
-              Fermer la camera
+              Fermer la caméra
             </button>
             <button className="secondary-button" type="button" onClick={captureFace}>
               Capturer le visage

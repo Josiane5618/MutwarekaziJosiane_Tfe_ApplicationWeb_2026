@@ -39,7 +39,7 @@ export default function AdminLoginForm({ onLogin }) {
       onLogin(payload.access_token);
       setFeedback({
         type: "success",
-        message: "Connexion administrateur reussie."
+        message: "Connexion administrateur réussie."
       });
     } catch {
       setFeedback({
@@ -57,13 +57,13 @@ export default function AdminLoginForm({ onLogin }) {
         <p className="section-label">Administration</p>
         <h2>Connexion administrateur</h2>
         <p className="section-copy">
-          Connectez-vous avec le compte admin local pour valider les demandes.
+          Connectez-vous pour gérer les demandes, les salles, les utilisateurs, les réservations et les accès.
         </p>
       </div>
 
       <div className="credential-card">
         <p className="credential-label">Compte admin local</p>
-        <p className="credential-value">Email: admin@gestion-acces.dev</p>
+        <p className="credential-value">E-mail : admin@gestion-acces.dev</p>
         <p className="credential-value">Mot de passe: Admin123!</p>
       </div>
 

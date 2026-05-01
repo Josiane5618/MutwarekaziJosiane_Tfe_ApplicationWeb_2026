@@ -62,7 +62,7 @@ export default function RegisterForm() {
         type: "success",
         message:
           payload?.message ||
-          "Inscription envoyee. En attente de validation par l'administrateur."
+          "Inscription envoyée. En attente de validation par l'administrateur."
       });
 
       setForm({
@@ -76,7 +76,7 @@ export default function RegisterForm() {
       setFeedback({
         type: "error",
         message:
-          "Impossible de joindre le backend. Verifie que l'API est bien lancee."
+          "Impossible de joindre le backend. Vérifie que l'API est bien lancée."
       });
     } finally {
       setIsSubmitting(false);
@@ -89,8 +89,7 @@ export default function RegisterForm() {
         <p className="section-label">Demande d'inscription</p>
         <h2>Informations utilisateur</h2>
         <p className="section-copy">
-          Remplissez le formulaire puis capturez votre visage pour envoyer la
-          demande.
+          Remplissez le formulaire et capturez votre visage.
         </p>
       </div>
 
@@ -102,7 +101,7 @@ export default function RegisterForm() {
 
       <div className="form-grid">
         <label className="field">
-          <span>Prenom</span>
+          <span>Prénom</span>
           <input
             name="prenom"
             placeholder="Josiane"
@@ -140,7 +139,7 @@ export default function RegisterForm() {
           <input
             name="password"
             type="password"
-            placeholder="Minimum recommande: un mot de passe fort"
+            placeholder="Minimum recommandé : un mot de passe fort"
             value={form.password}
             onChange={handleChange}
             required
