@@ -156,18 +156,18 @@ export default function UserDashboard({ token, onLogout }) {
       <div className="panel-header panel-header-row">
         <div>
           <p className="section-label">Utilisateur</p>
-          <h2>Espace connecte</h2>
+          <h2>Espace connecté</h2>
           <p className="section-copy">
-            Consultez vos reservations, vos notifications et reservez une salle.
+            Consultez vos réservations, vos notifications et réservez une salle.
           </p>
         </div>
 
         <div className="toolbar toolbar-inline">
           <button className="secondary-button" type="button" onClick={loadDashboard}>
-            Rafraichir
+            Rafraîchir
           </button>
           <button className="secondary-button" type="button" onClick={onLogout}>
-            Deconnexion
+            Déconnexion
           </button>
         </div>
       </div>
@@ -235,8 +235,8 @@ export default function UserDashboard({ token, onLogout }) {
                   </select>
                 </label>
 
-                <div className="form-grid">
-                  <label className="field">
+                <div className="form-grid reservation-form-grid">
+                  <label className="field field-full reservation-date-field">
                     <span>Date</span>
                     <input
                       name="dateReservation"
@@ -270,8 +270,8 @@ export default function UserDashboard({ token, onLogout }) {
                   </label>
                 </div>
 
-                <button className="submit-button" type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? "Reservation..." : "Creer la reservation"}
+                <button className="submit-button compact-submit" type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Réservation..." : "Créer la réservation"}
                 </button>
               </form>
             </article>
@@ -279,7 +279,7 @@ export default function UserDashboard({ token, onLogout }) {
             <article className="request-card">
               <div className="panel-header">
                 <p className="section-label">Historique</p>
-                <h2>Mes reservations</h2>
+                <h2>Mes réservations</h2>
               </div>
 
               {reservations.length === 0 ? (
@@ -305,10 +305,10 @@ export default function UserDashboard({ token, onLogout }) {
             </article>
           </section>
 
-          <article className="request-card">
+          <article className="request-card user-notifications-card">
             <div className="panel-header">
               <p className="section-label">Notifications</p>
-              <h2>Messages recus</h2>
+              <h2>Messages reçus</h2>
             </div>
 
             {notifications.length === 0 ? (

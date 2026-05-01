@@ -54,8 +54,8 @@ export default function UserLoginForm({ onLogin }) {
         <p className="section-label">Utilisateur</p>
         <h2>Connexion utilisateur</h2>
         <p className="section-copy">
-          Connectez-vous apres validation administrateur pour acceder aux
-          reservations et notifications.
+          Connectez-vous après validation administrateur pour accéder aux
+          réservations et notifications.
         </p>
       </div>
 

@@ -106,7 +106,7 @@ export default function AdminReviewPanel({ token, onLogout }) {
       if (!silent) {
         setFeedback({
           type: "success",
-          message: "Tableau de bord charge avec succes."
+          message: "Tableau de bord chargé avec succès."
         });
       }
     } catch {
@@ -151,7 +151,7 @@ export default function AdminReviewPanel({ token, onLogout }) {
         setFeedback({
           type: "error",
           message:
-            payload?.detail || "La decision administrateur a echoue."
+            payload?.detail || "La décision administrateur a échoué."
         });
         return;
       }
@@ -160,7 +160,7 @@ export default function AdminReviewPanel({ token, onLogout }) {
         type: "success",
         message:
           payload?.message ||
-          "La demande a ete traitee avec succes."
+          "La demande a été traitée avec succès."
       });
       await loadDashboard({ silent: true });
     } catch {
@@ -216,7 +216,7 @@ export default function AdminReviewPanel({ token, onLogout }) {
           type: "error",
           message:
             responsePayload?.detail ||
-            "La salle n'a pas pu etre enregistree."
+            "La salle n'a pas pu être enregistrée."
         });
         return;
       }
@@ -224,8 +224,8 @@ export default function AdminReviewPanel({ token, onLogout }) {
       setFeedback({
         type: "success",
         message: editingSalleId
-          ? "Salle mise a jour avec succes."
-          : "Salle creee avec succes."
+          ? "Salle mise à jour avec succès."
+          : "Salle créée avec succès."
       });
       resetSalleForm();
       await loadDashboard({ silent: true });
@@ -273,7 +273,7 @@ export default function AdminReviewPanel({ token, onLogout }) {
         setFeedback({
           type: "error",
           message:
-            payload?.detail || "La salle n'a pas pu etre desactivee."
+            payload?.detail || "La salle n'a pas pu être désactivée."
         });
         return;
       }
@@ -285,7 +285,7 @@ export default function AdminReviewPanel({ token, onLogout }) {
       setFeedback({
         type: "success",
         message:
-          payload?.message || "Salle desactivee avec succes."
+          payload?.message || "Salle désactivée avec succès."
       });
       await loadDashboard({ silent: true });
     } catch {
@@ -313,8 +313,8 @@ export default function AdminReviewPanel({ token, onLogout }) {
           <p className="section-label">Administration</p>
           <h2>Tableau de bord administrateur</h2>
           <p className="section-copy">
-            Gere les demandes, les salles, les utilisateurs, les reservations et
-            les logs d'acces.
+            Gère les demandes, les salles, les utilisateurs, les réservations et
+            les logs d'accès.
           </p>
         </div>
 
@@ -325,10 +325,10 @@ export default function AdminReviewPanel({ token, onLogout }) {
             onClick={() => loadDashboard()}
             disabled={isLoading || isSubmitting}
           >
-            {isLoading ? "Actualisation..." : "Rafraichir"}
+            {isLoading ? "Actualisation..." : "Rafraîchir"}
           </button>
           <button className="secondary-button" type="button" onClick={onLogout}>
-            Deconnexion
+            Déconnexion
           </button>
         </div>
       </div>
@@ -355,13 +355,13 @@ export default function AdminReviewPanel({ token, onLogout }) {
         <article className="info-card">
           <p className="info-label">Reservations</p>
           <p className="info-title">{reservations.length}</p>
-          <p className="info-meta">Reservations enregistrees</p>
+          <p className="info-meta">Réservations enregistrées</p>
         </article>
 
         <article className="info-card">
-          <p className="info-label">Logs d'acces</p>
+          <p className="info-label">Logs d'accès</p>
           <p className="info-title">{accessLogs.length}</p>
-          <p className="info-meta">Tentatives d'acces historisees</p>
+          <p className="info-meta">Tentatives d'accès historisées</p>
         </article>
       </section>
 
@@ -511,7 +511,7 @@ export default function AdminReviewPanel({ token, onLogout }) {
 
               {salles.length === 0 ? (
                 <div className="empty-state">
-                  <p>Aucune salle enregistree.</p>
+                    <p>Aucune salle enregistrée.</p>
                 </div>
               ) : (
                 <div className="stack-list">
@@ -521,7 +521,7 @@ export default function AdminReviewPanel({ token, onLogout }) {
                         <div>
                           <p className="request-name">{salle.nom}</p>
                           <p className="request-email">
-                            {salle.description || "Aucune description"} · Capacite{" "}
+                            {salle.description || "Aucune description"} · Capacité{" "}
                             {salle.capacite ?? "n/a"}
                           </p>
                         </div>
@@ -567,7 +567,7 @@ export default function AdminReviewPanel({ token, onLogout }) {
 
               {users.length === 0 ? (
                 <div className="empty-state">
-                  <p>Aucun utilisateur trouve.</p>
+                  <p>Aucun utilisateur trouvé.</p>
                 </div>
               ) : (
                 <div className="stack-list">
@@ -602,20 +602,20 @@ export default function AdminReviewPanel({ token, onLogout }) {
           <section className="dashboard-grid admin-secondary-grid">
             <article className="request-card">
               <div className="panel-header">
-                <p className="section-label">Reservations</p>
+                <p className="section-label">Réservations</p>
                 <h2>Historique global</h2>
               </div>
 
               {reservations.length === 0 ? (
                 <div className="empty-state">
-                  <p>Aucune reservation enregistree.</p>
+                  <p>Aucune réservation enregistrée.</p>
                 </div>
               ) : (
                 <div className="stack-list">
                   {reservations.map(reservation => (
                     <div className="stack-item" key={reservation.id}>
                       <p className="request-name">
-                        {reservation.salle.nom} reservee par{" "}
+                        {reservation.salle.nom} réservée par{" "}
                         {reservation.utilisateur.prenom} {reservation.utilisateur.nom}
                       </p>
                       <p className="request-email">
@@ -632,13 +632,13 @@ export default function AdminReviewPanel({ token, onLogout }) {
 
             <article className="request-card">
               <div className="panel-header">
-                <p className="section-label">Logs d'acces</p>
-                <h2>Trace des controles</h2>
+                <p className="section-label">Logs d'accès</p>
+                <h2>Trace des contrôles</h2>
               </div>
 
               {accessLogs.length === 0 ? (
                 <div className="empty-state">
-                  <p>Aucun log d'acces disponible.</p>
+                  <p>Aucun log d'accès disponible.</p>
                 </div>
               ) : (
                 <div className="stack-list">
