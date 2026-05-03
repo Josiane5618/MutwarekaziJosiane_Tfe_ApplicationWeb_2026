@@ -150,3 +150,16 @@ export async function getNotifications(token) {
     }
   });
 }
+
+export async function verifyRoomAccess({ token, file }) {
+  const formData = new FormData();
+  formData.append("file", file, "room-access-capture.jpg");
+
+  return fetch(`${API_URL}/access/verify`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`
+    },
+    body: formData
+  });
+}

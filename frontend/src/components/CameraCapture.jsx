@@ -50,8 +50,8 @@ export default function CameraCapture({ onCapture, hasCapture }) {
     const video = videoRef.current;
     const canvas = canvasRef.current;
 
-    canvas.width = 300;
-    canvas.height = 200;
+    canvas.width = 400;
+    canvas.height = 300;
 
     const context = canvas.getContext("2d");
     context.drawImage(video, 0, 0, canvas.width, canvas.height);

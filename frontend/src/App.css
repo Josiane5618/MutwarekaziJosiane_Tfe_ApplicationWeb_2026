@@ -427,6 +427,73 @@
   gap: 12px;
 }
 
+.access-card {
+  background: #f6fbfd;
+}
+
+.access-form {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.95fr) minmax(220px, 0.7fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.access-form .camera-card {
+  padding: 16px;
+}
+
+.access-form .camera-preview {
+  width: min(100%, 340px);
+  aspect-ratio: 4 / 3;
+  min-height: 0;
+  margin: 0 auto;
+}
+
+.access-form .camera-video,
+.access-form .preview-image {
+  min-height: 0;
+  height: 100%;
+}
+
+.access-form .camera-actions {
+  justify-content: center;
+}
+
+.access-result-panel {
+  min-width: 0;
+  border-radius: 16px;
+  border: 1px solid rgba(17, 36, 51, 0.08);
+  background: #fff;
+  padding: 16px;
+  display: grid;
+  align-content: center;
+  gap: 10px;
+}
+
+.access-notice {
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.access-notice-success {
+  background: rgba(11, 122, 117, 0.1);
+  color: #0b625e;
+  border: 1px solid rgba(11, 122, 117, 0.2);
+}
+
+.access-notice-error {
+  background: rgba(197, 44, 72, 0.08);
+  color: #9f2941;
+  border: 1px solid rgba(197, 44, 72, 0.18);
+}
+
+.access-form .submit-button {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
 .stack-list {
   display: grid;
   gap: 10px;
@@ -833,7 +900,8 @@
 
   .admin-layout,
   .dashboard-grid,
-  .reservation-layout {
+  .reservation-layout,
+  .access-form {
     grid-template-columns: 1fr;
   }
 

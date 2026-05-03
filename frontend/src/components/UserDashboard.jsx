@@ -4,8 +4,10 @@ import {
   getCurrentUser,
   getMyReservations,
   getNotifications,
-  getSalles
+  getSalles,
+  verifyRoomAccess
 } from "../api/api";
+import CameraCapture from "./CameraCapture";
 
 export default function UserDashboard({ token, onLogout }) {
   const [user, setUser] = useState(null);
@@ -14,6 +16,13 @@ export default function UserDashboard({ token, onLogout }) {
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAccessSubmitting, setIsAccessSubmitting] = useState(false);
+  const [accessFaceImage, setAccessFaceImage] = useState(null);
+  const [accessResult, setAccessResult] = useState(null);
+  const [accessNotice, setAccessNotice] = useState({
+    type: "",
+    message: ""
+  });
   const [feedback, setFeedback] = useState({
     type: "",
     message: ""
@@ -32,9 +41,11 @@ export default function UserDashboard({ token, onLogout }) {
     onLogout();
   };
 
-  const loadDashboard = async () => {
-    setIsLoading(true);
-    setFeedback({ type: "", message: "" });
+  const loadDashboard = async ({ silent = false } = {}) => {
+    if (!silent) {
+      setIsLoading(true);
+      setFeedback({ type: "", message: "" });
+    }
 
     try {
       const responses = await Promise.all([
@@ -84,7 +95,9 @@ export default function UserDashboard({ token, onLogout }) {
         message: "Impossible de joindre le backend."
       });
     } finally {
-      setIsLoading(false);
+      if (!silent) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -97,6 +110,12 @@ export default function UserDashboard({ token, onLogout }) {
       ...reservationForm,
       [event.target.name]: event.target.value
     });
+  };
+
+  const handleAccessCapture = image => {
+    setAccessFaceImage(image);
+    setAccessResult(null);
+    setAccessNotice({ type: "", message: "" });
   };
 
   const handleReservationSubmit = async event => {
@@ -123,14 +142,14 @@ export default function UserDashboard({ token, onLogout }) {
         setFeedback({
           type: "error",
           message:
-            payload?.detail || "La reservation n'a pas pu etre creee."
+            payload?.detail || "La réservation n'a pas pu être créée."
         });
         return;
       }
 
       setFeedback({
         type: "success",
-        message: payload?.message || "Reservation creee avec succes."
+        message: payload?.message || "Réservation créée avec succès."
       });
 
       setReservationForm(currentForm => ({
@@ -140,7 +159,7 @@ export default function UserDashboard({ token, onLogout }) {
         heureFin: ""
       }));
 
-      await loadDashboard();
+      await loadDashboard({ silent: true });
     } catch {
       setFeedback({
         type: "error",
@@ -151,6 +170,81 @@ export default function UserDashboard({ token, onLogout }) {
     }
   };
 
+  const handleAccessSubmit = async event => {
+    event.preventDefault();
+    setFeedback({ type: "", message: "" });
+    setAccessResult(null);
+    setAccessNotice({ type: "", message: "" });
+
+    if (!accessFaceImage) {
+      setAccessNotice({
+        type: "error",
+        message: "Capturez votre visage avant de demander l'accès."
+      });
+      setFeedback({
+        type: "error",
+        message: "Capturez votre visage avant de demander l'accès."
+      });
+      return;
+    }
+
+    setIsAccessSubmitting(true);
+
+    try {
+      const response = await verifyRoomAccess({
+        token,
+        file: accessFaceImage
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (response.status === 401 || response.status === 403) {
+        handleUnauthorized();
+        return;
+      }
+
+      if (!response.ok) {
+        setAccessNotice({
+          type: "error",
+          message: payload?.detail || "La vérification faciale a échoué."
+        });
+        setFeedback({
+          type: "error",
+          message: payload?.detail || "La vérification faciale a échoué."
+        });
+        return;
+      }
+
+      setAccessResult(payload);
+      setAccessNotice({
+        type: payload?.resultat === "ACCES_AUTORISE" ? "success" : "error",
+        message:
+          payload?.resultat === "ACCES_AUTORISE"
+            ? "Identité confirmée."
+            : "Le visage ne correspond pas au profil enregistré."
+      });
+      setFeedback({
+        type: payload?.resultat === "ACCES_AUTORISE" ? "success" : "error",
+        message:
+          payload?.resultat === "ACCES_AUTORISE"
+            ? "Accès salle autorisé."
+            : "Accès salle refusé."
+      });
+
+      await loadDashboard({ silent: true });
+    } catch {
+      setAccessNotice({
+        type: "error",
+        message: "Impossible de joindre le backend."
+      });
+      setFeedback({
+        type: "error",
+        message: "Impossible de joindre le backend."
+      });
+    } finally {
+      setIsAccessSubmitting(false);
+    }
+  };
+
   return (
     <div className="user-dashboard">
       <div className="panel-header panel-header-row">
@@ -158,12 +252,12 @@ export default function UserDashboard({ token, onLogout }) {
           <p className="section-label">Utilisateur</p>
           <h2>Espace connecté</h2>
           <p className="section-copy">
-            Consultez vos réservations, vos notifications et réservez une salle.
+            Consultez vos réservations, vos notifications et vérifiez l'accès salle.
           </p>
         </div>
 
         <div className="toolbar toolbar-inline">
-          <button className="secondary-button" type="button" onClick={loadDashboard}>
+          <button className="secondary-button" type="button" onClick={() => loadDashboard()}>
             Rafraîchir
           </button>
           <button className="secondary-button" type="button" onClick={onLogout}>
@@ -191,7 +285,7 @@ export default function UserDashboard({ token, onLogout }) {
                 {user?.prenom} {user?.nom}
               </p>
               <p className="info-meta">{user?.email}</p>
-              <p className="info-meta">Role: {user?.role}</p>
+              <p className="info-meta">Rôle : {user?.role}</p>
             </article>
 
             <article className="info-card">
@@ -201,17 +295,76 @@ export default function UserDashboard({ token, onLogout }) {
             </article>
 
             <article className="info-card">
-              <p className="info-label">Reservations</p>
+              <p className="info-label">Réservations</p>
               <p className="info-title">{reservations.length}</p>
-              <p className="info-meta">Reservations enregistrees</p>
+              <p className="info-meta">Réservations enregistrées</p>
             </article>
           </section>
+
+          <article className="request-card access-card">
+            <div className="panel-header">
+              <p className="section-label">Accès salle</p>
+              <h2>Vérification faciale</h2>
+              <p className="section-copy">
+                Capturez votre visage pour confirmer votre identité avant l'accès.
+              </p>
+            </div>
+
+            <form className="access-form" onSubmit={handleAccessSubmit}>
+              <CameraCapture
+                onCapture={handleAccessCapture}
+                hasCapture={Boolean(accessFaceImage)}
+              />
+
+              <div className="access-result-panel">
+                {accessNotice.message ? (
+                  <div className={`access-notice access-notice-${accessNotice.type}`}>
+                    {accessNotice.message}
+                  </div>
+                ) : null}
+
+                {accessResult ? (
+                  <>
+                    <span
+                      className={
+                        accessResult.resultat === "ACCES_AUTORISE"
+                          ? "request-badge badge-success"
+                          : "request-badge badge-danger"
+                      }
+                    >
+                      {accessResult.resultat === "ACCES_AUTORISE"
+                        ? "Accès autorisé"
+                        : "Accès refusé"}
+                    </span>
+                    <p className="request-meta">
+                      Distance faciale :{" "}
+                      {typeof accessResult.distance === "number"
+                        ? accessResult.distance.toFixed(3)
+                      : "n/a"}
+                    </p>
+                  </>
+                ) : !accessNotice.message ? (
+                  <p className="request-meta">
+                    Le résultat apparaîtra ici après vérification.
+                  </p>
+                ) : null}
+              </div>
+
+              <button
+                className="submit-button compact-submit"
+                type="submit"
+                disabled={isAccessSubmitting}
+              >
+                {isAccessSubmitting ? "Vérification..." : "Demander l'accès salle"}
+              </button>
+            </form>
+          </article>
 
           <section className="reservation-layout">
             <article className="request-card">
               <div className="panel-header">
-                <p className="section-label">Reservation</p>
-                <h2>Creer une reservation</h2>
+                <p className="section-label">Réservation</p>
+                <h2>Créer une réservation</h2>
               </div>
 
               <form className="register-form" onSubmit={handleReservationSubmit}>
@@ -225,11 +378,11 @@ export default function UserDashboard({ token, onLogout }) {
                     required
                   >
                     <option value="" disabled>
-                      Selectionnez une salle
+                      Sélectionnez une salle
                     </option>
                     {salles.map(salle => (
                       <option key={salle.id} value={salle.id}>
-                        {salle.nom} - capacite {salle.capacite ?? "n/a"}
+                        {salle.nom} - capacité {salle.capacite ?? "n/a"}
                       </option>
                     ))}
                   </select>
@@ -248,7 +401,7 @@ export default function UserDashboard({ token, onLogout }) {
                   </label>
 
                   <label className="field">
-                    <span>Heure de debut</span>
+                    <span>Heure de début</span>
                     <input
                       name="heureDebut"
                       type="time"
@@ -284,7 +437,7 @@ export default function UserDashboard({ token, onLogout }) {
 
               {reservations.length === 0 ? (
                 <div className="empty-state">
-                  <p>Aucune reservation pour le moment.</p>
+                  <p>Aucune réservation pour le moment.</p>
                 </div>
               ) : (
                 <div className="stack-list">
@@ -295,7 +448,7 @@ export default function UserDashboard({ token, onLogout }) {
                           `Salle #${reservation.salle_id}`}
                       </p>
                       <p className="request-email">
-                        {reservation.date} de {reservation.heure_debut} a{" "}
+                        {reservation.date} de {reservation.heure_debut} à{" "}
                         {reservation.heure_fin}
                       </p>
                     </div>
