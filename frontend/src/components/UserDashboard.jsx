@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  cancelReservation,
   createReservation,
   getCurrentUser,
   getMyReservations,
@@ -16,6 +17,7 @@ export default function UserDashboard({ token, onLogout }) {
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [cancelingReservationId, setCancelingReservationId] = useState(null);
   const [isAccessSubmitting, setIsAccessSubmitting] = useState(false);
   const [accessFaceImage, setAccessFaceImage] = useState(null);
   const [accessResult, setAccessResult] = useState(null);
@@ -116,6 +118,46 @@ export default function UserDashboard({ token, onLogout }) {
     setAccessFaceImage(image);
     setAccessResult(null);
     setAccessNotice({ type: "", message: "" });
+  };
+
+  const handleCancelReservation = async reservationId => {
+    setFeedback({ type: "", message: "" });
+    setCancelingReservationId(reservationId);
+
+    try {
+      const response = await cancelReservation({
+        token,
+        reservationId
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (response.status === 401 || response.status === 403) {
+        handleUnauthorized();
+        return;
+      }
+
+      if (!response.ok) {
+        setFeedback({
+          type: "error",
+          message: payload?.detail || "La réservation n'a pas pu être annulée."
+        });
+        return;
+      }
+
+      setFeedback({
+        type: "success",
+        message: payload?.message || "Réservation annulée avec succès."
+      });
+
+      await loadDashboard({ silent: true });
+    } catch {
+      setFeedback({
+        type: "error",
+        message: "Impossible de joindre le backend."
+      });
+    } finally {
+      setCancelingReservationId(null);
+    }
   };
 
   const handleReservationSubmit = async event => {
@@ -443,14 +485,29 @@ export default function UserDashboard({ token, onLogout }) {
                 <div className="stack-list">
                   {reservations.map(reservation => (
                     <div className="stack-item" key={reservation.id}>
-                      <p className="request-name">
-                        {sallesById[String(reservation.salle_id)]?.nom ||
-                          `Salle #${reservation.salle_id}`}
-                      </p>
-                      <p className="request-email">
-                        {reservation.date} de {reservation.heure_debut} à{" "}
-                        {reservation.heure_fin}
-                      </p>
+                      <div className="request-card-header">
+                        <div>
+                          <p className="request-name">
+                            {sallesById[String(reservation.salle_id)]?.nom ||
+                              `Salle #${reservation.salle_id}`}
+                          </p>
+                          <p className="request-email">
+                            {reservation.date} de {reservation.heure_debut} à{" "}
+                            {reservation.heure_fin}
+                          </p>
+                        </div>
+
+                        <button
+                          className="danger-button"
+                          type="button"
+                          disabled={cancelingReservationId === reservation.id}
+                          onClick={() => handleCancelReservation(reservation.id)}
+                        >
+                          {cancelingReservationId === reservation.id
+                            ? "Annulation..."
+                            : "Annuler"}
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>

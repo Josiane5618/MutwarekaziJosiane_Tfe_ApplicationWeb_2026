@@ -86,3 +86,37 @@ def creer_reservation(
     db.commit()
 
     return {"message": "Réservation créée avec succès"}
+
+
+@router.delete("/{reservation_id}")
+def annuler_reservation(
+    reservation_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user)
+):
+    reservation = (
+        db.query(Reservation)
+        .filter(
+            Reservation.id == reservation_id,
+            Reservation.utilisateur_id == user["user_id"]
+        )
+        .first()
+    )
+
+    if not reservation:
+        raise HTTPException(
+            status_code=404,
+            detail="Réservation introuvable"
+        )
+
+    db.delete(reservation)
+
+    notification = Notification(
+        utilisateur_id=user["user_id"],
+        message="Votre réservation de salle a été annulée."
+    )
+    db.add(notification)
+
+    db.commit()
+
+    return {"message": "Réservation annulée avec succès"}

@@ -143,6 +143,15 @@ export async function createReservation({
   });
 }
 
+export async function cancelReservation({ token, reservationId }) {
+  return fetch(`${API_URL}/reservations/${reservationId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+}
+
 export async function getNotifications(token) {
   return fetch(`${API_URL}/notifications/`, {
     headers: {
