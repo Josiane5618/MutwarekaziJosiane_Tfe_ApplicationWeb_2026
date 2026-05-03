@@ -8,7 +8,7 @@ import {
   getSalles,
   updateCurrentUser,
   updateReservation,
-  verifyRoomAccess
+  verifyBuildingAccess
 } from "../api/api";
 import CameraCapture from "./CameraCapture";
 
@@ -392,7 +392,7 @@ export default function UserDashboard({ token, onLogout }) {
     setIsAccessSubmitting(true);
 
     try {
-      const response = await verifyRoomAccess({
+      const response = await verifyBuildingAccess({
         token,
         file: accessFaceImage
       });
@@ -427,8 +427,8 @@ export default function UserDashboard({ token, onLogout }) {
         type: payload?.resultat === "ACCES_AUTORISE" ? "success" : "error",
         message:
           payload?.resultat === "ACCES_AUTORISE"
-            ? "Accès salle autorisé."
-            : "Accès salle refusé."
+            ? "Accès bâtiment autorisé."
+            : "Accès bâtiment refusé."
       });
 
       await loadDashboard({ silent: true });
@@ -453,7 +453,7 @@ export default function UserDashboard({ token, onLogout }) {
           <p className="section-label">Utilisateur</p>
           <h2>Espace connecté</h2>
           <p className="section-copy">
-            Consultez vos réservations, vos notifications et vérifiez l'accès salle.
+            Consultez vos réservations, vos notifications et vérifiez l'accès bâtiment.
           </p>
         </div>
 
@@ -563,7 +563,7 @@ export default function UserDashboard({ token, onLogout }) {
 
           <article className="request-card access-card">
             <div className="panel-header">
-              <p className="section-label">Accès salle</p>
+              <p className="section-label">Accès bâtiment</p>
               <h2>Vérification faciale</h2>
               <p className="section-copy">
                 Capturez votre visage pour confirmer votre identité avant l'accès.
@@ -615,7 +615,7 @@ export default function UserDashboard({ token, onLogout }) {
                 type="submit"
                 disabled={isAccessSubmitting}
               >
-                {isAccessSubmitting ? "Vérification..." : "Demander l'accès salle"}
+                {isAccessSubmitting ? "Vérification..." : "Demander l'accès bâtiment"}
               </button>
             </form>
           </article>

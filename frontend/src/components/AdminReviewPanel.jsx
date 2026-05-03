@@ -8,6 +8,7 @@ import {
   getAdminUsers,
   getPendingUsers,
   updateAdminSalle,
+  updateAdminUser,
   validateUser
 } from "../api/api";
 
@@ -27,7 +28,11 @@ function formatDateTime(value) {
 }
 
 function formatReservationWindow(reservation) {
-  return `${reservation.date} de ${reservation.heure_debut} a ${reservation.heure_fin}`;
+  return `${reservation.date} de ${reservation.heure_debut} à ${reservation.heure_fin}`;
+}
+
+function formatAccessResult(result) {
+  return result === "ACCES_AUTORISE" ? "Accès autorisé" : "Accès refusé";
 }
 
 export default function AdminReviewPanel({ token, onLogout }) {
@@ -40,6 +45,7 @@ export default function AdminReviewPanel({ token, onLogout }) {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [updatingUserId, setUpdatingUserId] = useState(null);
   const [editingSalleId, setEditingSalleId] = useState(null);
   const [salleForm, setSalleForm] = useState(initialSalleForm);
   const [feedback, setFeedback] = useState({
@@ -179,6 +185,50 @@ export default function AdminReviewPanel({ token, onLogout }) {
       ...currentForm,
       [name]: type === "checkbox" ? checked : value
     }));
+  };
+
+  const handleUserStatusToggle = async userToUpdate => {
+    setFeedback({ type: "", message: "" });
+    setUpdatingUserId(userToUpdate.id);
+
+    try {
+      const response = await updateAdminUser({
+        token,
+        userId: userToUpdate.id,
+        data: {
+          actif: !userToUpdate.actif
+        }
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (response.status === 401 || response.status === 403) {
+        handleUnauthorized();
+        return;
+      }
+
+      if (!response.ok) {
+        setFeedback({
+          type: "error",
+          message: payload?.detail || "Le compte n'a pas pu être modifié."
+        });
+        return;
+      }
+
+      setFeedback({
+        type: "success",
+        message: payload.actif
+          ? "Compte utilisateur activé."
+          : "Compte utilisateur désactivé."
+      });
+      await loadDashboard({ silent: true });
+    } catch {
+      setFeedback({
+        type: "error",
+        message: "Impossible de joindre le backend."
+      });
+    } finally {
+      setUpdatingUserId(null);
+    }
   };
 
   const handleSalleSubmit = async event => {
@@ -343,17 +393,17 @@ export default function AdminReviewPanel({ token, onLogout }) {
         <article className="info-card">
           <p className="info-label">Utilisateurs</p>
           <p className="info-title">{users.length}</p>
-          <p className="info-meta">Comptes disponibles dans le systeme</p>
+          <p className="info-meta">Comptes disponibles dans le système</p>
         </article>
 
         <article className="info-card">
           <p className="info-label">Salles</p>
           <p className="info-title">{salles.length}</p>
-          <p className="info-meta">Salles administrees par l'application</p>
+          <p className="info-meta">Salles administrées par l'application</p>
         </article>
 
         <article className="info-card">
-          <p className="info-label">Reservations</p>
+          <p className="info-label">Réservations</p>
           <p className="info-title">{reservations.length}</p>
           <p className="info-meta">Réservations enregistrées</p>
         </article>
@@ -458,7 +508,7 @@ export default function AdminReviewPanel({ token, onLogout }) {
 
                 <div className="form-grid">
                   <label className="field">
-                    <span>Capacite</span>
+                    <span>Capacité</span>
                     <input
                       name="capacite"
                       type="number"
@@ -486,7 +536,7 @@ export default function AdminReviewPanel({ token, onLogout }) {
                     type="submit"
                     disabled={isSubmitting}
                   >
-                    {editingSalleId ? "Mettre a jour" : "Ajouter la salle"}
+                    {editingSalleId ? "Mettre à jour" : "Ajouter la salle"}
                   </button>
                   {editingSalleId ? (
                     <button
@@ -550,7 +600,7 @@ export default function AdminReviewPanel({ token, onLogout }) {
                           disabled={isSubmitting || !salle.active}
                           onClick={() => handleSalleDelete(salle.id)}
                         >
-                          Desactiver
+                          Désactiver
                         </button>
                       </div>
                     </div>
@@ -562,7 +612,7 @@ export default function AdminReviewPanel({ token, onLogout }) {
             <article className="request-card">
               <div className="panel-header">
                 <p className="section-label">Utilisateurs</p>
-                <h2>Comptes enregistres</h2>
+                <h2>Comptes enregistrés</h2>
               </div>
 
               {users.length === 0 ? (
@@ -579,7 +629,7 @@ export default function AdminReviewPanel({ token, onLogout }) {
                             {user.prenom} {user.nom}
                           </p>
                           <p className="request-email">
-                            {user.email} · Role {user.role}
+                            {user.email} · Rôle {user.role}
                           </p>
                         </div>
                         <span
@@ -591,6 +641,25 @@ export default function AdminReviewPanel({ token, onLogout }) {
                         >
                           {user.actif ? "Actif" : "En attente"}
                         </span>
+                      </div>
+
+                      <div className="request-actions">
+                        <button
+                          className={user.actif ? "danger-button" : "secondary-button"}
+                          type="button"
+                          disabled={
+                            user.role === "admin" ||
+                            updatingUserId === user.id ||
+                            isSubmitting
+                          }
+                          onClick={() => handleUserStatusToggle(user)}
+                        >
+                          {updatingUserId === user.id
+                            ? "Mise à jour..."
+                            : user.actif
+                              ? "Désactiver"
+                              : "Activer"}
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -658,11 +727,11 @@ export default function AdminReviewPanel({ token, onLogout }) {
                               : "request-badge badge-danger"
                           }
                         >
-                          {log.resultat}
+                          {formatAccessResult(log.resultat)}
                         </span>
                       </div>
                       <p className="request-meta">
-                        {formatDateTime(log.date_acces)} · Distance{" "}
+                        {formatDateTime(log.date_acces)} · Distance faciale{" "}
                         {typeof log.distance === "number"
                           ? log.distance.toFixed(3)
                           : "n/a"}

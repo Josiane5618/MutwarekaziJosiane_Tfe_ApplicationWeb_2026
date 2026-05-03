@@ -42,6 +42,17 @@ export async function getAdminUsers(token) {
   });
 }
 
+export async function updateAdminUser({ token, userId, data }) {
+  return fetch(`${API_URL}/admin/users/${userId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(data)
+  });
+}
+
 export async function getAdminSalles(token) {
   return fetch(`${API_URL}/admin/salles`, {
     headers: {
@@ -194,9 +205,9 @@ export async function getNotifications(token) {
   });
 }
 
-export async function verifyRoomAccess({ token, file }) {
+export async function verifyBuildingAccess({ token, file }) {
   const formData = new FormData();
-  formData.append("file", file, "room-access-capture.jpg");
+  formData.append("file", file, "building-access-capture.jpg");
 
   return fetch(`${API_URL}/access/verify`, {
     method: "POST",

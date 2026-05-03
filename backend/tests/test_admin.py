@@ -1,12 +1,17 @@
 from datetime import date, datetime, time
 
+import pytest
+from fastapi import HTTPException
+
 from app.models.log_acces import LogAcces
+from app.models.notification import Notification
 from app.models.reservation import Reservation
 from app.models.salle import Salle
 from app.models.utilisateur import Utilisateur
 from app.routers.admin import (
     SalleCreate,
     SalleUpdate,
+    UserUpdate,
     create_salle,
     delete_salle,
     list_access_logs,
@@ -15,6 +20,7 @@ from app.routers.admin import (
     list_salles_admin,
     list_users,
     update_salle,
+    update_user,
     validate_user,
 )
 
@@ -107,6 +113,64 @@ def test_list_users_returns_all_users_in_descending_id_order(db_session):
         "beta@example.com",
         "alpha@example.com",
     ]
+
+
+def test_admin_can_deactivate_standard_user(db_session):
+    user = Utilisateur(
+        prenom="Active",
+        nom="User",
+        email="active-user@example.com",
+        mot_de_passe_hash="hash",
+        role="utilisateur",
+        actif=True
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+
+    response = update_user(
+        user_id=user.id,
+        payload=UserUpdate(actif=False),
+        db=db_session,
+        admin={"role": "admin"}
+    )
+
+    db_session.refresh(user)
+    notification = (
+        db_session.query(Notification)
+        .filter(Notification.utilisateur_id == user.id)
+        .first()
+    )
+
+    assert response["actif"] is False
+    assert user.actif is False
+    assert notification is not None
+    assert "désactivé" in notification.message
+
+
+def test_admin_cannot_deactivate_admin_user(db_session):
+    admin_user = Utilisateur(
+        prenom="Admin",
+        nom="Root",
+        email="admin-root@example.com",
+        mot_de_passe_hash="hash",
+        role="admin",
+        actif=True
+    )
+    db_session.add(admin_user)
+    db_session.commit()
+    db_session.refresh(admin_user)
+
+    with pytest.raises(HTTPException) as exc_info:
+        update_user(
+            user_id=admin_user.id,
+            payload=UserUpdate(actif=False),
+            db=db_session,
+            admin={"role": "admin"}
+        )
+
+    assert getattr(exc_info.value, "status_code", None) == 400
+    assert getattr(exc_info.value, "detail", None) == "Impossible de désactiver un administrateur"
 
 
 def test_admin_can_create_update_and_deactivate_salle(db_session):

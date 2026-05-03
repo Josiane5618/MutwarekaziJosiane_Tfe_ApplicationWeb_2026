@@ -33,6 +33,10 @@ class SalleUpdate(BaseModel):
     active: Optional[bool] = None
 
 
+class UserUpdate(BaseModel):
+    actif: bool
+
+
 def serialize_user(user: Utilisateur):
     return {
         "id": user.id,
@@ -114,6 +118,43 @@ def list_users(
 ):
     users = db.query(Utilisateur).order_by(Utilisateur.id.desc()).all()
     return [serialize_user(user) for user in users]
+
+
+@router.put("/users/{user_id}")
+def update_user(
+    user_id: int,
+    payload: UserUpdate,
+    db: Session = Depends(get_db),
+    admin=Depends(get_current_admin)
+):
+    user = db.query(Utilisateur).filter(Utilisateur.id == user_id).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+
+    if user.role == "admin" and payload.actif is False:
+        raise HTTPException(
+            status_code=400,
+            detail="Impossible de désactiver un administrateur"
+        )
+
+    user.actif = payload.actif
+
+    db.add(
+        Notification(
+            utilisateur_id=user.id,
+            message=(
+                "Votre compte a été activé par un administrateur."
+                if payload.actif
+                else "Votre compte a été désactivé par un administrateur."
+            )
+        )
+    )
+
+    db.commit()
+    db.refresh(user)
+
+    return serialize_user(user)
 
 
 @router.get("/salles")
