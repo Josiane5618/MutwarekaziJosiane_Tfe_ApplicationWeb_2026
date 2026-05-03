@@ -20,3 +20,5 @@ frontend/dist/
 
 .Python
 *.egg-info/
+
+docs/local/
