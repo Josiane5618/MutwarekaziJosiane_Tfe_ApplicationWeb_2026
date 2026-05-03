@@ -88,6 +88,71 @@ def creer_reservation(
     return {"message": "Réservation créée avec succès"}
 
 
+@router.put("/{reservation_id}")
+def modifier_reservation(
+    reservation_id: int,
+    salle_id: int,
+    date_reservation: date,
+    heure_debut: time,
+    heure_fin: time,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user)
+):
+    reservation = (
+        db.query(Reservation)
+        .filter(
+            Reservation.id == reservation_id,
+            Reservation.utilisateur_id == user["user_id"]
+        )
+        .first()
+    )
+
+    if not reservation:
+        raise HTTPException(
+            status_code=404,
+            detail="Réservation introuvable"
+        )
+
+    if heure_debut >= heure_fin:
+        raise HTTPException(
+            status_code=400,
+            detail="L'heure de début doit être antérieure à l'heure de fin"
+        )
+
+    conflit = (
+        db.query(Reservation)
+        .filter(
+            Reservation.id != reservation_id,
+            Reservation.salle_id == salle_id,
+            Reservation.date == date_reservation,
+            Reservation.heure_debut < heure_fin,
+            Reservation.heure_fin > heure_debut
+        )
+        .first()
+    )
+
+    if conflit:
+        raise HTTPException(
+            status_code=409,
+            detail="Créneau déjà réservé pour cette salle"
+        )
+
+    reservation.salle_id = salle_id
+    reservation.date = date_reservation
+    reservation.heure_debut = heure_debut
+    reservation.heure_fin = heure_fin
+
+    notification = Notification(
+        utilisateur_id=user["user_id"],
+        message="Votre réservation de salle a été modifiée avec succès."
+    )
+    db.add(notification)
+
+    db.commit()
+
+    return {"message": "Réservation modifiée avec succès"}
+
+
 @router.delete("/{reservation_id}")
 def annuler_reservation(
     reservation_id: int,

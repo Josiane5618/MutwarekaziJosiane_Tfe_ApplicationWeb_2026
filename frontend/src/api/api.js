@@ -152,6 +152,29 @@ export async function cancelReservation({ token, reservationId }) {
   });
 }
 
+export async function updateReservation({
+  token,
+  reservationId,
+  salleId,
+  dateReservation,
+  heureDebut,
+  heureFin
+}) {
+  const params = new URLSearchParams({
+    salle_id: String(salleId),
+    date_reservation: dateReservation,
+    heure_debut: heureDebut,
+    heure_fin: heureFin
+  });
+
+  return fetch(`${API_URL}/reservations/${reservationId}?${params.toString()}`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+}
+
 export async function getNotifications(token) {
   return fetch(`${API_URL}/notifications/`, {
     headers: {

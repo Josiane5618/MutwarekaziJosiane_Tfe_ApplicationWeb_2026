@@ -7,7 +7,7 @@ from app.models.notification import Notification
 from app.models.reservation import Reservation
 from app.models.salle import Salle
 from app.models.utilisateur import Utilisateur
-from app.routers.reservation import annuler_reservation
+from app.routers.reservation import annuler_reservation, modifier_reservation
 
 
 def create_user(db_session, email):
@@ -25,9 +25,9 @@ def create_user(db_session, email):
     return user
 
 
-def create_reservation(db_session, user_id):
+def create_salle(db_session, nom="Salle test"):
     salle = Salle(
-        nom=f"Salle {user_id}",
+        nom=nom,
         description="Salle de test",
         capacite=10,
         active=True
@@ -35,13 +35,19 @@ def create_reservation(db_session, user_id):
     db_session.add(salle)
     db_session.commit()
     db_session.refresh(salle)
+    return salle
+
+
+def create_reservation(db_session, user_id, salle=None, start=time(9, 0), end=time(10, 0)):
+    if salle is None:
+        salle = create_salle(db_session, nom=f"Salle {user_id}")
 
     reservation = Reservation(
         utilisateur_id=user_id,
         salle_id=salle.id,
         date=date(2026, 5, 4),
-        heure_debut=time(9, 0),
-        heure_fin=time(10, 0)
+        heure_debut=start,
+        heure_fin=end
     )
     db_session.add(reservation)
     db_session.commit()
@@ -97,3 +103,89 @@ def test_user_cannot_cancel_another_users_reservation(db_session):
     assert exc_info.value.status_code == 404
     assert exc_info.value.detail == "Réservation introuvable"
     assert still_existing is not None
+
+
+def test_user_can_update_own_reservation(db_session):
+    user = create_user(db_session, "owner@example.com")
+    salle = create_salle(db_session, "Salle initiale")
+    new_salle = create_salle(db_session, "Salle modifiée")
+    reservation = create_reservation(db_session, user.id, salle=salle)
+
+    response = modifier_reservation(
+        reservation_id=reservation.id,
+        salle_id=new_salle.id,
+        date_reservation=date(2026, 5, 5),
+        heure_debut=time(11, 0),
+        heure_fin=time(12, 0),
+        db=db_session,
+        user={"user_id": user.id, "role": "utilisateur"}
+    )
+
+    db_session.refresh(reservation)
+    notification = (
+        db_session.query(Notification)
+        .filter(Notification.utilisateur_id == user.id)
+        .first()
+    )
+
+    assert response["message"] == "Réservation modifiée avec succès"
+    assert reservation.salle_id == new_salle.id
+    assert reservation.date == date(2026, 5, 5)
+    assert reservation.heure_debut == time(11, 0)
+    assert reservation.heure_fin == time(12, 0)
+    assert notification is not None
+    assert "modifiée" in notification.message
+
+
+def test_user_cannot_update_another_users_reservation(db_session):
+    owner = create_user(db_session, "owner@example.com")
+    other_user = create_user(db_session, "other@example.com")
+    salle = create_salle(db_session)
+    reservation = create_reservation(db_session, owner.id, salle=salle)
+
+    with pytest.raises(HTTPException) as exc_info:
+        modifier_reservation(
+            reservation_id=reservation.id,
+            salle_id=salle.id,
+            date_reservation=date(2026, 5, 5),
+            heure_debut=time(11, 0),
+            heure_fin=time(12, 0),
+            db=db_session,
+            user={"user_id": other_user.id, "role": "utilisateur"}
+        )
+
+    assert exc_info.value.status_code == 404
+    assert exc_info.value.detail == "Réservation introuvable"
+
+
+def test_update_reservation_rejects_room_conflict(db_session):
+    user = create_user(db_session, "owner@example.com")
+    salle = create_salle(db_session)
+    reservation = create_reservation(
+        db_session,
+        user.id,
+        salle=salle,
+        start=time(9, 0),
+        end=time(10, 0)
+    )
+    create_reservation(
+        db_session,
+        user.id,
+        salle=salle,
+        start=time(11, 0),
+        end=time(12, 0)
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        modifier_reservation(
+            reservation_id=reservation.id,
+            salle_id=salle.id,
+            date_reservation=date(2026, 5, 4),
+            heure_debut=time(11, 30),
+            heure_fin=time(12, 30),
+            db=db_session,
+            user={"user_id": user.id, "role": "utilisateur"}
+        )
+
+    assert exc_info.value.status_code == 409
+    assert exc_info.value.detail == "Créneau déjà réservé pour cette salle"

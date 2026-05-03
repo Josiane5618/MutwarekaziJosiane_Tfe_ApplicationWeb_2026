@@ -6,6 +6,7 @@ import {
   getMyReservations,
   getNotifications,
   getSalles,
+  updateReservation,
   verifyRoomAccess
 } from "../api/api";
 import CameraCapture from "./CameraCapture";
@@ -18,6 +19,8 @@ export default function UserDashboard({ token, onLogout }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cancelingReservationId, setCancelingReservationId] = useState(null);
+  const [editingReservationId, setEditingReservationId] = useState(null);
+  const [updatingReservationId, setUpdatingReservationId] = useState(null);
   const [isAccessSubmitting, setIsAccessSubmitting] = useState(false);
   const [accessFaceImage, setAccessFaceImage] = useState(null);
   const [accessResult, setAccessResult] = useState(null);
@@ -30,6 +33,12 @@ export default function UserDashboard({ token, onLogout }) {
     message: ""
   });
   const [reservationForm, setReservationForm] = useState({
+    salleId: "",
+    dateReservation: "",
+    heureDebut: "",
+    heureFin: ""
+  });
+  const [editReservationForm, setEditReservationForm] = useState({
     salleId: "",
     dateReservation: "",
     heureDebut: "",
@@ -114,6 +123,34 @@ export default function UserDashboard({ token, onLogout }) {
     });
   };
 
+  const handleEditReservationChange = event => {
+    setEditReservationForm({
+      ...editReservationForm,
+      [event.target.name]: event.target.value
+    });
+  };
+
+  const startReservationEdit = reservation => {
+    setEditingReservationId(reservation.id);
+    setEditReservationForm({
+      salleId: String(reservation.salle_id),
+      dateReservation: reservation.date,
+      heureDebut: reservation.heure_debut,
+      heureFin: reservation.heure_fin
+    });
+    setFeedback({ type: "", message: "" });
+  };
+
+  const stopReservationEdit = () => {
+    setEditingReservationId(null);
+    setEditReservationForm({
+      salleId: "",
+      dateReservation: "",
+      heureDebut: "",
+      heureFin: ""
+    });
+  };
+
   const handleAccessCapture = image => {
     setAccessFaceImage(image);
     setAccessResult(null);
@@ -157,6 +194,51 @@ export default function UserDashboard({ token, onLogout }) {
       });
     } finally {
       setCancelingReservationId(null);
+    }
+  };
+
+  const handleUpdateReservation = async event => {
+    event.preventDefault();
+    setFeedback({ type: "", message: "" });
+    setUpdatingReservationId(editingReservationId);
+
+    try {
+      const response = await updateReservation({
+        token,
+        reservationId: editingReservationId,
+        salleId: editReservationForm.salleId,
+        dateReservation: editReservationForm.dateReservation,
+        heureDebut: editReservationForm.heureDebut,
+        heureFin: editReservationForm.heureFin
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (response.status === 401 || response.status === 403) {
+        handleUnauthorized();
+        return;
+      }
+
+      if (!response.ok) {
+        setFeedback({
+          type: "error",
+          message: payload?.detail || "La réservation n'a pas pu être modifiée."
+        });
+        return;
+      }
+
+      setFeedback({
+        type: "success",
+        message: payload?.message || "Réservation modifiée avec succès."
+      });
+      stopReservationEdit();
+      await loadDashboard({ silent: true });
+    } catch {
+      setFeedback({
+        type: "error",
+        message: "Impossible de joindre le backend."
+      });
+    } finally {
+      setUpdatingReservationId(null);
     }
   };
 
@@ -485,29 +567,111 @@ export default function UserDashboard({ token, onLogout }) {
                 <div className="stack-list">
                   {reservations.map(reservation => (
                     <div className="stack-item" key={reservation.id}>
-                      <div className="request-card-header">
-                        <div>
-                          <p className="request-name">
-                            {sallesById[String(reservation.salle_id)]?.nom ||
-                              `Salle #${reservation.salle_id}`}
-                          </p>
-                          <p className="request-email">
-                            {reservation.date} de {reservation.heure_debut} à{" "}
-                            {reservation.heure_fin}
-                          </p>
-                        </div>
+                      {editingReservationId === reservation.id ? (
+                        <form className="edit-reservation-form" onSubmit={handleUpdateReservation}>
+                          <label className="field">
+                            <span>Salle</span>
+                            <select
+                              className="field-select"
+                              name="salleId"
+                              value={editReservationForm.salleId}
+                              onChange={handleEditReservationChange}
+                              required
+                            >
+                              {salles.map(salle => (
+                                <option key={salle.id} value={salle.id}>
+                                  {salle.nom}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
 
-                        <button
-                          className="danger-button"
-                          type="button"
-                          disabled={cancelingReservationId === reservation.id}
-                          onClick={() => handleCancelReservation(reservation.id)}
-                        >
-                          {cancelingReservationId === reservation.id
-                            ? "Annulation..."
-                            : "Annuler"}
-                        </button>
-                      </div>
+                          <label className="field">
+                            <span>Date</span>
+                            <input
+                              name="dateReservation"
+                              type="date"
+                              value={editReservationForm.dateReservation}
+                              onChange={handleEditReservationChange}
+                              required
+                            />
+                          </label>
+
+                          <label className="field">
+                            <span>Début</span>
+                            <input
+                              name="heureDebut"
+                              type="time"
+                              value={editReservationForm.heureDebut}
+                              onChange={handleEditReservationChange}
+                              required
+                            />
+                          </label>
+
+                          <label className="field">
+                            <span>Fin</span>
+                            <input
+                              name="heureFin"
+                              type="time"
+                              value={editReservationForm.heureFin}
+                              onChange={handleEditReservationChange}
+                              required
+                            />
+                          </label>
+
+                          <div className="request-actions">
+                            <button
+                              className="submit-button"
+                              type="submit"
+                              disabled={updatingReservationId === reservation.id}
+                            >
+                              {updatingReservationId === reservation.id
+                                ? "Modification..."
+                                : "Enregistrer"}
+                            </button>
+                            <button
+                              className="secondary-button"
+                              type="button"
+                              onClick={stopReservationEdit}
+                            >
+                              Annuler l'édition
+                            </button>
+                          </div>
+                        </form>
+                      ) : (
+                        <div className="request-card-header">
+                          <div>
+                            <p className="request-name">
+                              {sallesById[String(reservation.salle_id)]?.nom ||
+                                `Salle #${reservation.salle_id}`}
+                            </p>
+                            <p className="request-email">
+                              {reservation.date} de {reservation.heure_debut} à{" "}
+                              {reservation.heure_fin}
+                            </p>
+                          </div>
+
+                          <div className="request-actions">
+                            <button
+                              className="secondary-button"
+                              type="button"
+                              onClick={() => startReservationEdit(reservation)}
+                            >
+                              Modifier
+                            </button>
+                            <button
+                              className="danger-button"
+                              type="button"
+                              disabled={cancelingReservationId === reservation.id}
+                              onClick={() => handleCancelReservation(reservation.id)}
+                            >
+                              {cancelingReservationId === reservation.id
+                                ? "Annulation..."
+                                : "Annuler"}
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
