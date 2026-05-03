@@ -105,6 +105,17 @@ export async function getCurrentUser(token) {
   });
 }
 
+export async function updateCurrentUser({ token, data }) {
+  return fetch(`${API_URL}/auth/me`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(data)
+  });
+}
+
 export async function getSalles(token) {
   return fetch(`${API_URL}/reservations/salles`, {
     headers: {

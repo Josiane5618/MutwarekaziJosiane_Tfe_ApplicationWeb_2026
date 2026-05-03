@@ -141,3 +141,78 @@ def test_get_me_returns_current_user(db_session):
     assert response["email"] == "profile@example.com"
     assert response["prenom"] == "Josiane"
     assert response["role"] == "utilisateur"
+
+
+def test_update_me_updates_current_user_profile(db_session, monkeypatch):
+    monkeypatch.setattr(
+        auth_router,
+        "hash_password",
+        lambda password: f"hashed-{password}"
+    )
+
+    user = Utilisateur(
+        prenom="Ancien",
+        nom="Nom",
+        email="old@example.com",
+        mot_de_passe_hash="old-hash",
+        role="utilisateur",
+        actif=True
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+
+    response = auth_router.update_me(
+        payload=auth_router.ProfileUpdate(
+            prenom="Nouveau",
+            nom="Profil",
+            email="new@example.com",
+            password="nouveau-secret"
+        ),
+        db=db_session,
+        user={"user_id": user.id, "role": "utilisateur"}
+    )
+
+    db_session.refresh(user)
+
+    assert response["prenom"] == "Nouveau"
+    assert response["nom"] == "Profil"
+    assert response["email"] == "new@example.com"
+    assert user.mot_de_passe_hash == "hashed-nouveau-secret"
+
+
+def test_update_me_rejects_email_already_used_by_another_user(db_session):
+    current_user = Utilisateur(
+        prenom="Current",
+        nom="User",
+        email="current@example.com",
+        mot_de_passe_hash="hash",
+        role="utilisateur",
+        actif=True
+    )
+    other_user = Utilisateur(
+        prenom="Other",
+        nom="User",
+        email="other@example.com",
+        mot_de_passe_hash="hash",
+        role="utilisateur",
+        actif=True
+    )
+    db_session.add_all([current_user, other_user])
+    db_session.commit()
+    db_session.refresh(current_user)
+
+    with pytest.raises(HTTPException) as exc_info:
+        auth_router.update_me(
+            payload=auth_router.ProfileUpdate(
+                prenom="Current",
+                nom="User",
+                email="other@example.com",
+                password=None
+            ),
+            db=db_session,
+            user={"user_id": current_user.id, "role": "utilisateur"}
+        )
+
+    assert exc_info.value.status_code == 409
+    assert exc_info.value.detail == "Cet email est déjà utilisé"

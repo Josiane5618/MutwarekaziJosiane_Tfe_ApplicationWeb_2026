@@ -6,6 +6,7 @@ import {
   getMyReservations,
   getNotifications,
   getSalles,
+  updateCurrentUser,
   updateReservation,
   verifyRoomAccess
 } from "../api/api";
@@ -18,6 +19,7 @@ export default function UserDashboard({ token, onLogout }) {
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isProfileSubmitting, setIsProfileSubmitting] = useState(false);
   const [cancelingReservationId, setCancelingReservationId] = useState(null);
   const [editingReservationId, setEditingReservationId] = useState(null);
   const [updatingReservationId, setUpdatingReservationId] = useState(null);
@@ -37,6 +39,12 @@ export default function UserDashboard({ token, onLogout }) {
     dateReservation: "",
     heureDebut: "",
     heureFin: ""
+  });
+  const [profileForm, setProfileForm] = useState({
+    prenom: "",
+    nom: "",
+    email: "",
+    password: ""
   });
   const [editReservationForm, setEditReservationForm] = useState({
     salleId: "",
@@ -90,6 +98,12 @@ export default function UserDashboard({ token, onLogout }) {
       }
 
       setUser(userPayload);
+      setProfileForm({
+        prenom: userPayload?.prenom || "",
+        nom: userPayload?.nom || "",
+        email: userPayload?.email || "",
+        password: ""
+      });
       setSalles(sallesPayload || []);
       setReservations(reservationsPayload || []);
       setNotifications(notificationsPayload || []);
@@ -119,6 +133,13 @@ export default function UserDashboard({ token, onLogout }) {
   const handleReservationChange = event => {
     setReservationForm({
       ...reservationForm,
+      [event.target.name]: event.target.value
+    });
+  };
+
+  const handleProfileChange = event => {
+    setProfileForm({
+      ...profileForm,
       [event.target.name]: event.target.value
     });
   };
@@ -194,6 +215,62 @@ export default function UserDashboard({ token, onLogout }) {
       });
     } finally {
       setCancelingReservationId(null);
+    }
+  };
+
+  const handleProfileSubmit = async event => {
+    event.preventDefault();
+    setFeedback({ type: "", message: "" });
+    setIsProfileSubmitting(true);
+
+    const payload = {
+      prenom: profileForm.prenom.trim(),
+      nom: profileForm.nom.trim(),
+      email: profileForm.email.trim()
+    };
+
+    if (profileForm.password.trim()) {
+      payload.password = profileForm.password;
+    }
+
+    try {
+      const response = await updateCurrentUser({
+        token,
+        data: payload
+      });
+      const responsePayload = await response.json().catch(() => null);
+
+      if (response.status === 401 || response.status === 403) {
+        handleUnauthorized();
+        return;
+      }
+
+      if (!response.ok) {
+        setFeedback({
+          type: "error",
+          message: responsePayload?.detail || "Le profil n'a pas pu être modifié."
+        });
+        return;
+      }
+
+      setUser(responsePayload);
+      setProfileForm({
+        prenom: responsePayload.prenom || "",
+        nom: responsePayload.nom || "",
+        email: responsePayload.email || "",
+        password: ""
+      });
+      setFeedback({
+        type: "success",
+        message: "Profil mis à jour avec succès."
+      });
+    } catch {
+      setFeedback({
+        type: "error",
+        message: "Impossible de joindre le backend."
+      });
+    } finally {
+      setIsProfileSubmitting(false);
     }
   };
 
@@ -403,7 +480,7 @@ export default function UserDashboard({ token, onLogout }) {
       ) : (
         <>
           <section className="dashboard-grid">
-            <article className="info-card">
+            <article className="info-card profile-summary-card">
               <p className="info-label">Profil</p>
               <p className="info-title">
                 {user?.prenom} {user?.nom}
@@ -424,6 +501,65 @@ export default function UserDashboard({ token, onLogout }) {
               <p className="info-meta">Réservations enregistrées</p>
             </article>
           </section>
+
+          <article className="request-card">
+            <div className="panel-header">
+              <p className="section-label">Profil</p>
+              <h2>Mettre à jour le profil</h2>
+            </div>
+
+            <form className="profile-form" onSubmit={handleProfileSubmit}>
+              <label className="field">
+                <span>Prénom</span>
+                <input
+                  name="prenom"
+                  value={profileForm.prenom}
+                  onChange={handleProfileChange}
+                  required
+                />
+              </label>
+
+              <label className="field">
+                <span>Nom</span>
+                <input
+                  name="nom"
+                  value={profileForm.nom}
+                  onChange={handleProfileChange}
+                  required
+                />
+              </label>
+
+              <label className="field">
+                <span>Email</span>
+                <input
+                  name="email"
+                  type="email"
+                  value={profileForm.email}
+                  onChange={handleProfileChange}
+                  required
+                />
+              </label>
+
+              <label className="field">
+                <span>Nouveau mot de passe</span>
+                <input
+                  name="password"
+                  type="password"
+                  value={profileForm.password}
+                  onChange={handleProfileChange}
+                  placeholder="Laisser vide pour conserver l'actuel"
+                />
+              </label>
+
+              <button
+                className="submit-button compact-submit"
+                type="submit"
+                disabled={isProfileSubmitting}
+              >
+                {isProfileSubmitting ? "Enregistrement..." : "Enregistrer le profil"}
+              </button>
+            </form>
+          </article>
 
           <article className="request-card access-card">
             <div className="panel-header">

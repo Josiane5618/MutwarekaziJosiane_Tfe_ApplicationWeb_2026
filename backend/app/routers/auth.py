@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
-from pydantic import EmailStr
+from typing import Optional
+
+from pydantic import BaseModel, EmailStr, Field
 
 from app.dependencies import get_db
 from app.models.donnee_faciale import DonneeFaciale
@@ -15,6 +17,13 @@ router = APIRouter(
     prefix="/auth",
     tags=["Authentification"]
 )
+
+
+class ProfileUpdate(BaseModel):
+    prenom: str = Field(..., min_length=1)
+    nom: str = Field(..., min_length=1)
+    email: EmailStr
+    password: Optional[str] = Field(default=None, min_length=1)
 
 
 @router.post("/register")
@@ -130,6 +139,59 @@ def get_me(
             status_code=404,
             detail="Utilisateur introuvable"
         )
+
+    return {
+        "id": current_user.id,
+        "prenom": current_user.prenom,
+        "nom": current_user.nom,
+        "email": current_user.email,
+        "role": current_user.role,
+        "actif": current_user.actif,
+    }
+
+
+@router.put("/me")
+def update_me(
+    payload: ProfileUpdate,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user)
+):
+    current_user = (
+        db.query(Utilisateur)
+        .filter(Utilisateur.id == user["user_id"])
+        .first()
+    )
+
+    if not current_user:
+        raise HTTPException(
+            status_code=404,
+            detail="Utilisateur introuvable"
+        )
+
+    existing_email_user = (
+        db.query(Utilisateur)
+        .filter(
+            Utilisateur.email == payload.email,
+            Utilisateur.id != current_user.id
+        )
+        .first()
+    )
+
+    if existing_email_user:
+        raise HTTPException(
+            status_code=409,
+            detail="Cet email est déjà utilisé"
+        )
+
+    current_user.prenom = payload.prenom.strip()
+    current_user.nom = payload.nom.strip()
+    current_user.email = payload.email
+
+    if payload.password:
+        current_user.mot_de_passe_hash = hash_password(payload.password)
+
+    db.commit()
+    db.refresh(current_user)
 
     return {
         "id": current_user.id,
