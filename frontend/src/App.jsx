@@ -13,7 +13,7 @@ function App() {
         <p className="eyebrow">Gestion d'accès</p>
         <h1>Plateforme de gestion d'accès</h1>
         <p className="hero-copy">
-          Inscriptions, validation et réservations au même endroit.
+          Gérez les inscriptions, l'accès au bâtiment et les réservations de salles.
         </p>
 
         <div className="hero-tabs" aria-label="Navigation principale">
