@@ -52,7 +52,7 @@ export default function AdminLoginForm({ onLogin }) {
   };
 
   return (
-    <form className="register-form" onSubmit={handleSubmit}>
+    <form className="register-form" onSubmit={handleSubmit} autoComplete="on">
       <div className="panel-header">
         <p className="section-label">Administration</p>
         <h2>Connexion administrateur</h2>
@@ -82,6 +82,7 @@ export default function AdminLoginForm({ onLogin }) {
             value={form.email}
             onChange={handleChange}
             placeholder="admin@gestion-acces.dev"
+            autoComplete="username"
             required
           />
         </label>
@@ -94,6 +95,7 @@ export default function AdminLoginForm({ onLogin }) {
             value={form.password}
             onChange={handleChange}
             placeholder="Entrez le mot de passe admin"
+            autoComplete="current-password"
             required
           />
         </label>

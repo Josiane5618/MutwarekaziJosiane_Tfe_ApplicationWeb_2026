@@ -84,7 +84,7 @@ export default function RegisterForm() {
   };
 
   return (
-    <form className="register-form" onSubmit={handleSubmit}>
+    <form className="register-form" onSubmit={handleSubmit} autoComplete="off">
       <div className="panel-header">
         <p className="section-label">Demande d'inscription</p>
         <h2>Informations utilisateur</h2>
@@ -104,9 +104,10 @@ export default function RegisterForm() {
           <span>Prénom</span>
           <input
             name="prenom"
-            placeholder="Josiane"
+            placeholder="Camille"
             value={form.prenom}
             onChange={handleChange}
+            autoComplete="given-name"
             required
           />
         </label>
@@ -115,9 +116,10 @@ export default function RegisterForm() {
           <span>Nom</span>
           <input
             name="nom"
-            placeholder="Mutwarekazi"
+            placeholder="Lemoine"
             value={form.nom}
             onChange={handleChange}
+            autoComplete="family-name"
             required
           />
         </label>
@@ -130,6 +132,7 @@ export default function RegisterForm() {
             placeholder="vous@example.com"
             value={form.email}
             onChange={handleChange}
+            autoComplete="off"
             required
           />
         </label>
@@ -142,6 +145,7 @@ export default function RegisterForm() {
             placeholder="Minimum recommandé : un mot de passe fort"
             value={form.password}
             onChange={handleChange}
+            autoComplete="new-password"
             required
           />
         </label>
