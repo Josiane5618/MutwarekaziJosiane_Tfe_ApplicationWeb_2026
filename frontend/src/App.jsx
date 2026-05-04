@@ -51,7 +51,7 @@ function App() {
           </div>
           <div className="hero-step">
             <span>3</span>
-            <p>Une fois validé, l'utilisateur se connecte et réserve une salle.</p>
+            <p>Une fois validé, l'utilisateur réserve une salle et accède au bâtiment par reconnaissance faciale.</p>
           </div>
         </div>
       </section>
