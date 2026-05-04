@@ -1,225 +1,105 @@
-# Application Web 2026
+# Application Web de Gestion d'Accès
 
-Application de gestion d'acces avec :
-- inscription utilisateur
-- validation par un administrateur
-- verification faciale
-- reservations de salles
-- notifications
+Ce projet a été réalisé dans le cadre de mon travail de fin d'études. L'objectif est de proposer une application web simple pour gérer l'accès à un bâtiment avec une vérification faciale, tout en permettant aussi la gestion des réservations de salles.
 
-J'ai organise ce projet de facon a garder une structure simple a suivre, avec un backend decoupe en `routers`, `models`, `schemas`, `security` et `utils`, et un frontend React volontairement leger. Certaines parties sont deja stables, d'autres sont encore en cours d'amelioration, donc ce README sert surtout a expliquer clairement comment le projet est construit et comment le lancer sans se perdre dans le code.
+J'ai essayé de garder une application claire à comprendre, avec un backend séparé du frontend, une interface simple, et des fonctionnalités proches des diagrammes préparés pour le projet.
 
-## Vue d'ensemble
+## Objectif Du Projet
 
-Le depot contient deux applications :
+L'application permet principalement de :
+
+- inscrire un utilisateur avec une capture faciale
+- faire valider ou refuser l'inscription par un administrateur
+- connecter un utilisateur validé
+- vérifier l'accès au bâtiment par reconnaissance faciale
+- réserver, modifier et annuler une salle
+- consulter ses notifications
+- permettre à l'administrateur de gérer les demandes, les utilisateurs, les salles, les réservations et les logs d'accès
+
+## Organisation Du Projet
+
+Le projet est séparé en deux parties :
 
 ```text
-.
-├── backend/
-│   ├── app/
-│   │   ├── main.py
-│   │   ├── database.py
-│   │   ├── dependencies.py
-│   │   ├── routers/
-│   │   ├── models/
-│   │   ├── schemas/
-│   │   ├── security/
-│   │   └── utils/
-│   ├── .python-version
-│   ├── run.py
-│   ├── pyproject.toml
-│   ├── test_face_recognition.py
-│   └── uv.lock
-├── frontend/
-│   ├── src/
-│   │   ├── api/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── App.jsx
-│   │   └── main.jsx
-│   └── README.md
-└── assets/
-    ├── dlib_face_recognition_resnet_model_v1.dat
-    └── shape_predictor_68_face_landmarks.dat
+backend/   API FastAPI, base de données, sécurité, reconnaissance faciale
+frontend/  Interface React utilisée dans le navigateur
+assets/    Modèles utilisés par la reconnaissance faciale
+docs/local/ Documents personnels ignorés par Git
 ```
 
-## Stack technique
+Le dossier `docs/local/` contient mes documents de travail locaux, par exemple les diagrammes et les consignes. Ce dossier est volontairement ignoré par Git.
 
-- Frontend: React + Vite
-- Backend: FastAPI + SQLAlchemy
-- Base de donnees: PostgreSQL
-- Securite: JWT + hash mot de passe avec `bcrypt`
-- Reconnaissance faciale: `dlib`, `opencv`, `numpy`
+## Fonctionnement Général
 
-## Comment lire le code rapidement
+### Inscription
 
-Pour comprendre rapidement l'organisation du code, l'ordre de lecture suivant est le plus utile :
+Un utilisateur non authentifié remplit le formulaire d'inscription et capture son visage avec la caméra. Le backend enregistre ses informations et stocke les données faciales nécessaires pour les vérifications futures.
 
-1. `backend/app/main.py`
-2. `backend/app/routers/`
-3. `backend/app/models/`
-4. `backend/app/security/`
-5. `frontend/src/App.jsx`
-6. `frontend/src/components/RegisterForm.jsx`
-7. `frontend/src/components/CameraCapture.jsx`
-8. `frontend/src/api/api.js`
+Le compte reste en attente tant qu'un administrateur ne l'a pas validé.
 
-Cette sequence permet de partir des points d'entree, puis de descendre vers la logique et enfin vers les details techniques.
+### Validation Administrateur
 
-## Role de chaque dossier
+L'administrateur se connecte avec le compte prévu pour l'administration. Il peut accepter ou refuser les demandes d'inscription.
 
-### `backend/app/main.py`
+Il peut aussi consulter et gérer :
 
-Point d'entree FastAPI. Il cree l'application et branche les routes :
-- `auth`
-- `admin`
-- `access`
-- `reservation`
-- `notification`
-- `health`
+- les utilisateurs
+- les salles
+- toutes les réservations
+- les logs d'accès
 
-### `backend/app/database.py`
+### Accès Au Bâtiment
 
-Centralise la connexion a PostgreSQL et definit :
-- `engine`
-- `SessionLocal`
-- `Base`
+Une fois connecté, l'utilisateur peut demander l'accès au bâtiment. Il capture son visage, puis le backend compare cette capture avec les données enregistrées lors de l'inscription.
 
-### `backend/app/dependencies.py`
+Le résultat peut être :
 
-Centralise les dependances partagees du backend, en particulier `get_db()` pour eviter de recopier la session SQLAlchemy dans chaque route.
+- `Accès autorisé`
+- `Accès refusé`
 
-### `backend/run.py`
+Chaque tentative est enregistrée dans les logs d'accès. Le seuil actuel de comparaison faciale est fixé à `0.5` dans le backend. Plus la distance est basse, plus les deux visages sont considérés proches.
 
-Petit point d'entree pour demarrer l'API sans memoriser la commande `uvicorn`.
+### Réservations
 
-### `backend/app/models/`
+L'utilisateur connecté peut :
 
-Contient les tables principales :
-- `Utilisateur`
-- `DonneeFaciale`
-- `Salle`
-- `Reservation`
-- `Notification`
-- `LogAcces`
+- consulter les salles disponibles
+- créer une réservation
+- modifier une réservation
+- annuler une réservation
+- consulter ses réservations
 
-### `backend/app/routers/`
+Le backend vérifie les conflits de créneaux pour éviter deux réservations au même moment dans la même salle.
 
-Contient la logique HTTP par domaine :
-- `auth.py`: inscription et connexion
-- `admin.py`: validation ou refus d'un compte
-- `access.py`: verification faciale pour l'acces
-- `reservation.py`: consultation des salles et creation de reservations
-- `notification.py`: lecture des notifications
+### Profil Et Notifications
 
-### `backend/app/security/`
+L'utilisateur peut mettre à jour son profil : prénom, nom, email et éventuellement son mot de passe.
 
-Contient la logique d'authentification :
-- creation du JWT
-- verification du token
-- controle du role administrateur
-- hash et verification du mot de passe
+Les notifications servent à informer l'utilisateur après certaines actions, comme une validation, une réservation ou une tentative d'accès.
 
-### `backend/app/face_recognition/`
+## Lancer Le Projet
 
-Contient le moteur de reconnaissance faciale. Le fichier `engine.py` charge les modeles `dlib` depuis `assets/` et extrait un vecteur facial a partir d'une image.
+Il faut lancer le backend et le frontend dans deux terminaux séparés.
 
-### `frontend/src/components/`
+### Backend
 
-Composants React reutilisables :
-- `CameraCapture.jsx`: active la webcam et capture une image
-- `RegisterForm.jsx`: gere le formulaire d'inscription et envoie les donnees au backend
+```bash
+cd backend
+uv sync --extra face
+uv run python run.py
+```
 
-### `frontend/src/api/api.js`
+L'API démarre normalement sur :
 
-Petit module d'acces HTTP. Il centralise les appels `fetch` vers le backend.
+```text
+http://127.0.0.1:8000
+```
 
-## Flux metier actuel
+Vérification rapide :
 
-### 1. Inscription
-
-L'idee du flux est la suivante :
-
-1. l'utilisateur remplit le formulaire
-2. il capture son visage
-3. le frontend envoie les donnees au backend
-4. le backend cree un utilisateur en attente
-5. les donnees faciales sont stockees pour la verification future
-
-### 2. Validation par l'administrateur
-
-Un administrateur accepte ou refuse une demande d'inscription. Une notification email est simulee dans `backend/app/utils/email_service.py`.
-
-### 3. Verification d'acces
-
-Lors d'une tentative d'acces :
-
-1. l'utilisateur envoie une nouvelle image
-2. le backend extrait l'encodage facial
-3. il compare cet encodage avec celui stocke en base
-4. il enregistre un log
-5. il cree une notification
-
-### 4. Reservations et notifications
-
-L'utilisateur authentifie peut :
-- consulter les salles actives
-- consulter ses reservations
-- creer une reservation si le creneau est libre
-- lire ses notifications
-
-## Ce qui est bien structure aujourd'hui
-
-- Le backend est deja decoupe par responsabilite, ce qui rend le code lisible.
-- Les noms des dossiers sont simples et pedagogiques.
-- Les routes metier sont separees par domaine fonctionnel.
-- Le module `security/` isole bien les sujets JWT et mot de passe.
-- Le frontend reste simple: peu de fichiers, peu d'abstraction inutile.
-- Le moteur facial est isole dans un module dedie, ce qui evite de melanger cette logique avec les routes.
-
-## Ce qui a ete stabilise
-
-- l'inscription backend utilise maintenant une seule route cohérente avec le modele `Utilisateur`
-- la validation admin repose sur `actif`
-- la configuration sensible est sortie du code source
-- le frontend affiche maintenant une vraie interface d'inscription
-- la version de Node attendue est documentee et verifiee automatiquement
-- le backend est maintenant gere avec `uv`
-- `get_db()` est centralise dans `backend/app/dependencies.py`
-
-## Structure cible simple
-
-L'objectif retenu ici est de garder une structure bien organisee mais facile a comprendre, avec cette logique :
-
-- `models/`: uniquement la structure des tables
-- `schemas/`: uniquement les entrees/sorties API
-- `routers/`: uniquement la couche HTTP
-- `services/`: logique metier reutilisable
-- `security/`: auth et permissions
-- `utils/`: helpers techniques
-
-Le dossier `services/` n'est pas indispensable tout de suite. Il devient surtout pertinent si la logique d'inscription, de validation admin ou de verification faciale commence a grossir.
-
-## Points de vigilance pour la suite
-
-- ajouter une vraie strategie de migration de base de donnees
-- ajouter des tests backend sur les routes principales
-- remplacer le service email simule par une integration reelle si besoin
-- verifier si un dossier `services/` devient utile quand la logique metier grossit
-- nettoyer eventuellement l'historique du depot si `venv/` y a deja ete versionne
-
-## Lancer le projet
-
-## Configuration
-
-La configuration n'est plus ecrite en dur dans le code.
-
-- le backend lit en priorite `backend/.env`, puis `/.env` a la racine si besoin
-- le frontend Vite lit `frontend/.env`
-
-Des exemples sont fournis dans :
-- `backend/.env.example`
-- `frontend/.env.example`
+```bash
+curl http://127.0.0.1:8000/health
+```
 
 ### Frontend
 
@@ -229,104 +109,107 @@ npm install
 npm run dev
 ```
 
-Prerequis frontend :
-- Node `20.19+` ou `22.12+`
-- la version utilisee ici est `22.12.0`
-- si `nvm` est installe, utiliser `nvm use` dans `frontend/`
+Le frontend démarre généralement sur :
 
-### Backend
-
-Installer `uv` si besoin :
-
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
+```text
+http://localhost:5173
 ```
 
-```bash
-cd backend
-uv sync
-uv run python run.py
+Si ce port est déjà utilisé, Vite propose automatiquement un autre port.
+
+## Configuration
+
+La configuration sensible n'est pas écrite directement dans le code.
+
+Les fichiers utilisés sont :
+
+- `backend/.env`
+- `frontend/.env`
+
+Des exemples existent aussi avec :
+
+- `backend/.env.example`
+- `frontend/.env.example`
+
+Dans mon environnement actuel, le backend utilise PostgreSQL sur le port `5433`.
+
+## Compte Administrateur
+
+Le compte administrateur local utilisé pendant le développement est :
+
+```text
+Email : admin@gestion-acces.dev
+Mot de passe : Admin123!
 ```
 
-L'API utilise les valeurs definies dans `backend/.env`.
+Ce compte sert à valider les inscriptions et accéder au tableau de bord administrateur.
 
-Pour activer la reconnaissance faciale complete sur une machine qui supporte bien les dependances natives :
+## Tests
 
-```bash
-uv sync --extra face
-```
-
-Pour inclure en une fois les dependances backend de developpement et la partie faciale :
-
-```bash
-uv sync --extra face
-```
-
-Verification rapide :
-
-```bash
-curl http://127.0.0.1:8000/health
-```
-
-## Utilisation sous Windows
-
-Le projet peut etre utilise sous Windows, avec une attention particuliere sur la partie reconnaissance faciale.
-
-### Frontend sous Windows
-
-- installer Node `22.12.0`, ou plus largement `20.19+`
-- ouvrir un terminal dans `frontend`
-- lancer `npm install`
-- lancer `npm run dev`
-
-### Backend sous Windows
-
-Dans PowerShell :
-
-```powershell
-cd backend
-uv sync
-uv run python run.py
-```
-
-Si `uv` n'est pas encore installe, une option simple sous Windows est :
-
-```powershell
-winget install --id=astral-sh.uv -e
-```
-
-Verification rapide :
-
-```powershell
-curl http://127.0.0.1:8000/health
-```
-
-### Partie reconnaissance faciale sous Windows
-
-- `opencv-python` est generalement plus simple a installer sur Windows car des wheels precompiles existent
-- `dlib` est le point le plus sensible : selon la machine, il peut demander une compilation ou des outils natifs supplementaires
-- `uv sync --extra face` est donc a tester directement sur le PC Windows cible
-
-Recommendation pratique :
-- valider d'abord le backend standard avec `uv sync`
-- ajouter ensuite l'extra facial avec `uv sync --extra face`
-- ne pas copier un `.venv` Linux vers Windows
-- recreer l'environnement Python directement sur le PC Windows
-
-## Tests backend
-
-Des tests simples ont ete ajoutes pour les routes les plus importantes :
-- inscription
-- connexion
-- validation administrateur
-
-Pour les lancer :
+Les tests backend peuvent être lancés avec :
 
 ```bash
 cd backend
 uv run pytest tests -q
 ```
 
-## En resume
+Les tests couvrent notamment :
 
-J'ai cherche a garder une base de code claire, simple et suffisamment robuste pour continuer le developpement sans ajouter de complexite inutile. L'architecture est maintenant plus coherente, la configuration est mieux isolee, le frontend est relie a un vrai flux d'inscription, et le backend peut se lancer et se tester plus facilement. La principale zone a surveiller reste la reconnaissance faciale native, surtout selon la machine cible, mais le reste du projet est maintenant plus propre et plus facile a reprendre.
+- l'inscription
+- la connexion
+- la validation administrateur
+- la gestion des utilisateurs par l'administrateur
+- la création, modification et annulation des réservations
+- la consultation des logs et des réservations côté admin
+
+## Utilisation Sous Windows
+
+Le projet est prévu pour pouvoir fonctionner sous Windows, mais il faut recréer l'environnement Python sur la machine Windows.
+
+Il ne faut pas copier un dossier `.venv` d'une autre machine.
+
+Sous Windows, les commandes principales restent :
+
+```powershell
+cd backend
+uv sync --extra face
+uv run python run.py
+```
+
+Pour installer `uv` sous Windows :
+
+```powershell
+winget install --id=astral-sh.uv -e
+```
+
+La partie la plus sensible sous Windows est `dlib`, car cette dépendance peut parfois demander des outils natifs supplémentaires. Le reste du projet est plus classique.
+
+## État Actuel
+
+Aujourd'hui, l'application couvre les principaux cas prévus :
+
+- inscription avec visage
+- validation par l'administrateur
+- connexion utilisateur
+- accès bâtiment par reconnaissance faciale
+- réservations de salles
+- modification et annulation de réservations
+- mise à jour du profil
+- gestion administrateur des utilisateurs et des salles
+- consultation des réservations et des logs d'accès
+
+Il reste surtout à améliorer la présentation de certaines parties de l'interface, notamment le tableau de bord administrateur, pour qu'il soit plus agréable à utiliser pendant une démonstration.
+
+## Points À Améliorer Plus Tard
+
+- organiser le tableau administrateur avec des onglets
+- améliorer encore les textes et l'ergonomie de l'interface
+- préparer un jeu de données propre pour la démonstration
+- ajouter une vraie stratégie de migration de base de données
+- tester la reconnaissance faciale sur la machine Windows finale
+
+## Remarque Personnelle
+
+Ce projet a évolué progressivement. Au départ, certaines parties étaient seulement prévues dans les diagrammes. L'application est maintenant plus proche du fonctionnement attendu : l'utilisateur peut s'inscrire, être validé, réserver, modifier son profil et demander l'accès au bâtiment avec son visage.
+
+Le but n'est pas d'avoir une application trop complexe, mais une base claire, démontrable et cohérente avec le sujet.
