@@ -195,6 +195,8 @@ Les tests couvrent notamment :
 - la gestion des utilisateurs par l'administrateur
 - la création, modification et annulation des réservations
 - la consultation des logs et des réservations côté admin
+- l'historique des demandes d'inscription
+- l'envoi d'emails en mode local ou SMTP de test
 
 ## Utilisation Sous Windows
 
@@ -218,6 +220,82 @@ winget install --id=astral-sh.uv -e
 
 La partie la plus sensible sous Windows est `dlib`, car cette dépendance peut parfois demander des outils natifs supplémentaires. Le reste du projet est plus classique.
 
+## Bilan Par Rapport Aux Documents
+
+Le projet a été rapproché du cahier des charges, du diagramme de cas d'utilisation et du diagramme de classes.
+
+Les grandes fonctionnalités attendues sont présentes :
+
+- inscription avec capture faciale
+- validation ou refus par un administrateur
+- email de réponse après décision administrateur
+- connexion utilisateur
+- réservation de salle avec règles de disponibilité
+- annulation conservée dans l'historique
+- accès au bâtiment par reconnaissance faciale
+- logs d'accès
+- tableau de bord administrateur
+
+### Par Rapport Au Diagramme De Classes
+
+Le code reprend les principales classes du diagramme, mais avec quelques adaptations liées au fonctionnement réel d'une API web.
+
+Les classes bien représentées dans le backend sont :
+
+- `Utilisateur`
+- `Salle`
+- `Reservation`
+- `DonneeFaciale`
+- `DemandeInscription`
+- `Notification`
+- `LogAcces`
+
+Les énumérations du diagramme sont aussi représentées avec :
+
+- `StatutCompte`
+- `StatutDemandeInscription`
+- `StatutReservation`
+- `StatutSalle`
+
+Les noms d'attributs sont proches, mais pas toujours exactement identiques.
+
+Par exemple :
+
+- le diagramme parle de `motDePasse`, le code utilise `mot_de_passe_hash`, car le mot de passe n'est jamais stocké en clair
+- le diagramme parle de `statutCompte`, le code calcule `statut_compte` à partir du compte et de la demande d'inscription
+- le diagramme parle de `dateSoumission` et `dateTraitement`, le code utilise `date_soumission` et `date_traitement`
+- le diagramme parle de `heureDebut` et `heureFin`, le code utilise `heure_debut` et `heure_fin`
+- le diagramme parle de `statutReservation`, le code utilise `statut`
+
+Les fonctions du diagramme ne sont pas toutes codées comme des méthodes dans les classes. Dans l'application, elles sont surtout représentées par des routes API.
+
+Par exemple :
+
+- `s'authentifier()` correspond à `/auth/login`
+- `consulterSalles()` correspond à `/reservations/salles`
+- `consulterMesReservations()` correspond à `/reservations/mes-reservations`
+- `modifierProfil()` correspond à `/auth/me`
+- `demanderAcces()` correspond à `/access/verify`
+- `traiterDemande()` correspond à `/admin/validate-user/{user_id}`
+- `consulterLogsAcces()` correspond à `/admin/access-logs`
+- `consulterToutesReservations()` correspond à `/admin/reservations`
+
+La principale différence est la classe `Administrateur`. Dans le code, il n'y a pas une table séparée `Administrateur`. Un administrateur est un `Utilisateur` avec le rôle `admin`. C'est une simplification volontaire, car cela évite de dupliquer les informations communes comme le nom, l'email et le mot de passe.
+
+Le premier administrateur est créé automatiquement par le backend avec les variables de configuration. Il n'est pas créé par le formulaire public d'inscription.
+
+### Points Encore Simplifiés
+
+Quelques éléments restent volontairement simplifiés :
+
+- il n'y a pas encore de vraie migration de base de données avec Alembic
+- le tableau administrateur pourrait encore être organisé avec des onglets
+- certains noms techniques suivent le style Python, donc `date_soumission` au lieu de `dateSoumission`
+- la classe `Administrateur` est représentée par un rôle, pas par une table séparée
+- les emails sont testables en local avec SMTP, mais pas configurés pour un service externe réel
+
+Globalement, le code suit donc bien l'idée du diagramme de classes, mais il l'adapte à une architecture web plus simple : les données sont dans les modèles SQLAlchemy, et les actions sont dans les routes FastAPI.
+
 ## État Actuel
 
 Aujourd'hui, l'application couvre les principaux cas prévus :
@@ -228,9 +306,13 @@ Aujourd'hui, l'application couvre les principaux cas prévus :
 - accès bâtiment par reconnaissance faciale
 - réservations de salles
 - modification et annulation de réservations
+- règles de réservation plus strictes
 - mise à jour du profil
+- demandes d'inscription avec statut et historique
+- emails de validation en test local
 - gestion administrateur des utilisateurs et des salles
 - consultation des réservations et des logs d'accès
+- consultation de la photo faciale par l'administrateur
 
 Il reste surtout à améliorer la présentation de certaines parties de l'interface, notamment le tableau de bord administrateur, pour qu'il soit plus agréable à utiliser pendant une démonstration.
 
