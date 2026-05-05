@@ -24,6 +24,7 @@ from app.routers.admin import (
     delete_salle,
     list_access_logs,
     list_pending_users,
+    list_registration_requests,
     list_reservations,
     list_salles_admin,
     list_users,
@@ -160,6 +161,92 @@ def test_validate_user_refuses_pending_user(db_session):
     assert user.statut_compte == StatutCompte.REFUSE.value
     assert demande.statut == StatutDemandeInscription.REFUSEE.value
     assert demande.date_traitement is not None
+
+
+def test_list_registration_requests_returns_all_request_statuses(db_session):
+    pending_user = Utilisateur(
+        prenom="Pending",
+        nom="User",
+        email="pending-history@example.com",
+        mot_de_passe_hash="hash",
+        role="utilisateur",
+        actif=False
+    )
+    accepted_user = Utilisateur(
+        prenom="Accepted",
+        nom="User",
+        email="accepted-history@example.com",
+        mot_de_passe_hash="hash",
+        role="utilisateur",
+        actif=True
+    )
+    refused_user = Utilisateur(
+        prenom="Refused",
+        nom="User",
+        email="refused-history@example.com",
+        mot_de_passe_hash="hash",
+        role="utilisateur",
+        actif=False
+    )
+    admin_user = Utilisateur(
+        prenom="Admin",
+        nom="User",
+        email="admin-history@example.com",
+        mot_de_passe_hash="hash",
+        role="admin",
+        actif=True
+    )
+    db_session.add_all([pending_user, accepted_user, refused_user, admin_user])
+    db_session.flush()
+    db_session.add_all([
+        DemandeInscription(
+            utilisateur_id=pending_user.id,
+            statut=StatutDemandeInscription.EN_ATTENTE.value,
+            date_soumission=datetime(2026, 5, 1, 10, 0),
+        ),
+        DemandeInscription(
+            utilisateur_id=accepted_user.id,
+            statut=StatutDemandeInscription.ACCEPTEE.value,
+            date_soumission=datetime(2026, 5, 2, 10, 0),
+            date_traitement=datetime(2026, 5, 2, 11, 0),
+        ),
+        DemandeInscription(
+            utilisateur_id=refused_user.id,
+            statut=StatutDemandeInscription.REFUSEE.value,
+            date_soumission=datetime(2026, 5, 3, 10, 0),
+            date_traitement=datetime(2026, 5, 3, 11, 0),
+        ),
+        DemandeInscription(
+            utilisateur_id=admin_user.id,
+            statut=StatutDemandeInscription.ACCEPTEE.value,
+            date_soumission=datetime(2026, 5, 4, 10, 0),
+        ),
+    ])
+    db_session.add(
+        DonneeFaciale(
+            utilisateur_id=accepted_user.id,
+            image=b"fake-image",
+            encodage=b"fake-encoding",
+        )
+    )
+    db_session.commit()
+
+    response = list_registration_requests(
+        db=db_session,
+        admin={"role": "admin"}
+    )
+
+    assert [request["utilisateur"]["email"] for request in response] == [
+        "refused-history@example.com",
+        "accepted-history@example.com",
+        "pending-history@example.com",
+    ]
+    assert [request["statut"] for request in response] == [
+        StatutDemandeInscription.REFUSEE.value,
+        StatutDemandeInscription.ACCEPTEE.value,
+        StatutDemandeInscription.EN_ATTENTE.value,
+    ]
+    assert response[1]["utilisateur"]["donnees_faciales_enregistrees"] is True
 
 
 def test_list_users_returns_all_users_in_descending_id_order(db_session):

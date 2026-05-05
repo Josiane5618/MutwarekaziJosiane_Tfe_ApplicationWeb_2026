@@ -8,6 +8,7 @@ import {
   getAdminUserFaceImage,
   getAdminUsers,
   getPendingUsers,
+  getRegistrationRequests,
   updateAdminSalle,
   updateAdminUser,
   validateUser
@@ -34,6 +35,30 @@ function formatRequestDate(request) {
   }
 
   return `Demande envoyée le ${formatDateTime(request.date_soumission)}`;
+}
+
+function formatRequestStatus(status) {
+  if (status === "ACCEPTEE") {
+    return "Acceptée";
+  }
+
+  if (status === "REFUSEE") {
+    return "Refusée";
+  }
+
+  return "En attente";
+}
+
+function getRequestBadgeClass(status) {
+  if (status === "ACCEPTEE") {
+    return "request-badge badge-success";
+  }
+
+  if (status === "REFUSEE") {
+    return "request-badge badge-danger";
+  }
+
+  return "request-badge badge-warning";
 }
 
 function formatReservationWindow(reservation) {
@@ -71,6 +96,7 @@ function formatAccessResult(result) {
 export default function AdminReviewPanel({ token, onLogout }) {
   const [dashboard, setDashboard] = useState({
     pendingUsers: [],
+    registrationRequests: [],
     users: [],
     salles: [],
     reservations: [],
@@ -103,6 +129,7 @@ export default function AdminReviewPanel({ token, onLogout }) {
     try {
       const responses = await Promise.all([
         getPendingUsers(token),
+        getRegistrationRequests(token),
         getAdminUsers(token),
         getAdminSalles(token),
         getAdminReservations(token),
@@ -133,6 +160,7 @@ export default function AdminReviewPanel({ token, onLogout }) {
 
       const [
         pendingUsersPayload,
+        registrationRequestsPayload,
         usersPayload,
         sallesPayload,
         reservationsPayload,
@@ -141,6 +169,7 @@ export default function AdminReviewPanel({ token, onLogout }) {
 
       setDashboard({
         pendingUsers: pendingUsersPayload || [],
+        registrationRequests: registrationRequestsPayload || [],
         users: usersPayload || [],
         salles: sallesPayload || [],
         reservations: reservationsPayload || [],
@@ -459,6 +488,7 @@ export default function AdminReviewPanel({ token, onLogout }) {
 
   const {
     pendingUsers,
+    registrationRequests,
     users,
     salles,
     reservations,
@@ -497,6 +527,12 @@ export default function AdminReviewPanel({ token, onLogout }) {
           <p className="info-label">Demandes</p>
           <p className="info-title">{pendingUsers.length}</p>
           <p className="info-meta">Utilisateurs en attente de validation</p>
+        </article>
+
+        <article className="info-card">
+          <p className="info-label">Historique</p>
+          <p className="info-title">{registrationRequests.length}</p>
+          <p className="info-meta">Demandes d'inscription suivies</p>
         </article>
 
         <article className="info-card">
@@ -705,6 +741,48 @@ export default function AdminReviewPanel({ token, onLogout }) {
           </section>
 
           <section className="dashboard-grid admin-secondary-grid">
+            <article className="request-card">
+              <div className="panel-header">
+                <p className="section-label">Demandes</p>
+                <h2>Historique des inscriptions</h2>
+              </div>
+
+              {registrationRequests.length === 0 ? (
+                <div className="empty-state">
+                  <p>Aucune demande d'inscription enregistrée.</p>
+                </div>
+              ) : (
+                <div className="stack-list">
+                  {registrationRequests.map(request => (
+                    <div className="stack-item" key={request.id}>
+                      <div className="request-card-header">
+                        <div>
+                          <p className="request-name">
+                            {request.utilisateur.prenom} {request.utilisateur.nom}
+                          </p>
+                          <p className="request-email">
+                            {request.utilisateur.email}
+                          </p>
+                          <p className="request-meta">
+                            Envoyée le {formatDateTime(request.date_soumission)}
+                          </p>
+                          <p className="request-meta">
+                            Traitée le{" "}
+                            {request.date_traitement
+                              ? formatDateTime(request.date_traitement)
+                              : "non traitée"}
+                          </p>
+                        </div>
+                        <span className={getRequestBadgeClass(request.statut)}>
+                          {formatRequestStatus(request.statut)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </article>
+
             <article className="request-card">
               <div className="panel-header">
                 <p className="section-label">Salles</p>

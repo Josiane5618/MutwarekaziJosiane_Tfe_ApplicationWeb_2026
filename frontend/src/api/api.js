@@ -25,6 +25,14 @@ export async function getPendingUsers(token) {
   });
 }
 
+export async function getRegistrationRequests(token) {
+  return fetch(`${API_URL}/admin/registration-requests`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+}
+
 export async function validateUser({ token, userId, accept }) {
   return fetch(`${API_URL}/admin/validate-user/${userId}?accept=${accept}`, {
     method: "PUT",

@@ -91,6 +91,33 @@ def serialize_demande_inscription(user: Utilisateur):
     }
 
 
+def serialize_registration_request(demande: DemandeInscription):
+    user = demande.utilisateur
+
+    return {
+        "id": demande.id,
+        "statut": demande.statut,
+        "date_soumission": demande.date_soumission.isoformat(),
+        "date_traitement": (
+            demande.date_traitement.isoformat()
+            if demande.date_traitement
+            else None
+        ),
+        "commentaire_refus": demande.commentaire_refus,
+        "utilisateur": {
+            "id": user.id,
+            "prenom": user.prenom,
+            "nom": user.nom,
+            "email": user.email,
+            "actif": user.actif,
+            "statut_compte": user.statut_compte,
+            "donnees_faciales_enregistrees": bool(
+                user.donnees_faciales and user.donnees_faciales.image
+            ),
+        },
+    }
+
+
 def serialize_reservation(reservation: Reservation):
     return {
         "id": reservation.id,
@@ -145,6 +172,25 @@ def list_pending_users(
     )
 
     return [serialize_user(user) for user in users]
+
+
+@router.get("/registration-requests")
+def list_registration_requests(
+    db: Session = Depends(get_db),
+    admin=Depends(get_current_admin)
+):
+    demandes = (
+        db.query(DemandeInscription)
+        .join(Utilisateur)
+        .filter(Utilisateur.role == "utilisateur")
+        .order_by(
+            DemandeInscription.date_soumission.desc(),
+            DemandeInscription.id.desc(),
+        )
+        .all()
+    )
+
+    return [serialize_registration_request(demande) for demande in demandes]
 
 
 @router.get("/users")
