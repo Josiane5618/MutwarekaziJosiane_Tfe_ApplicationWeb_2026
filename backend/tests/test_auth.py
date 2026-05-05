@@ -3,7 +3,9 @@ import asyncio
 import numpy as np
 import pytest
 
+from app.models.demande_inscription import DemandeInscription
 from app.models.donnee_faciale import DonneeFaciale
+from app.models.statuts import StatutDemandeInscription
 from app.models.utilisateur import Utilisateur
 from app.routers import auth as auth_router
 from fastapi import HTTPException
@@ -43,10 +45,16 @@ def test_register_creates_inactive_user_with_face_data(db_session, monkeypatch):
     )
 
     assert "user_id" in response
+    assert "demande_id" in response
 
     user = db_session.query(Utilisateur).filter_by(email="josiane@example.com").first()
     face_data = (
         db_session.query(DonneeFaciale)
+        .filter_by(utilisateur_id=user.id)
+        .first()
+    )
+    demande = (
+        db_session.query(DemandeInscription)
         .filter_by(utilisateur_id=user.id)
         .first()
     )
@@ -56,6 +64,8 @@ def test_register_creates_inactive_user_with_face_data(db_session, monkeypatch):
     assert user.role == "utilisateur"
     assert user.mot_de_passe_hash == "hashed-test-password"
     assert face_data is not None
+    assert demande is not None
+    assert demande.statut == StatutDemandeInscription.EN_ATTENTE.value
 
 def test_login_rejects_inactive_user(db_session, monkeypatch):
     monkeypatch.setattr(

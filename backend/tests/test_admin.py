@@ -3,11 +3,17 @@ from datetime import date, datetime, time
 import pytest
 from fastapi import HTTPException
 
+from app.models.demande_inscription import DemandeInscription
 from app.models.log_acces import LogAcces
 from app.models.notification import Notification
 from app.models.reservation import Reservation
 from app.models.salle import Salle
-from app.models.statuts import StatutCompte, StatutReservation, StatutSalle
+from app.models.statuts import (
+    StatutCompte,
+    StatutDemandeInscription,
+    StatutReservation,
+    StatutSalle,
+)
 from app.models.utilisateur import Utilisateur
 from app.routers.admin import (
     SalleCreate,
@@ -27,15 +33,16 @@ from app.routers.admin import (
 
 
 def test_list_pending_users_returns_only_inactive_standard_users(db_session):
+    pending_user = Utilisateur(
+        prenom="Pending",
+        nom="User",
+        email="pending@example.com",
+        mot_de_passe_hash="hash",
+        role="utilisateur",
+        actif=False
+    )
     db_session.add_all([
-        Utilisateur(
-            prenom="Pending",
-            nom="User",
-            email="pending@example.com",
-            mot_de_passe_hash="hash",
-            role="utilisateur",
-            actif=False
-        ),
+        pending_user,
         Utilisateur(
             prenom="Active",
             nom="User",
@@ -53,6 +60,13 @@ def test_list_pending_users_returns_only_inactive_standard_users(db_session):
             actif=True
         )
     ])
+    db_session.flush()
+    db_session.add(
+        DemandeInscription(
+            utilisateur_id=pending_user.id,
+            statut=StatutDemandeInscription.EN_ATTENTE.value,
+        )
+    )
     db_session.commit()
 
     response = list_pending_users(db=db_session, admin={"role": "admin"})
@@ -61,6 +75,9 @@ def test_list_pending_users_returns_only_inactive_standard_users(db_session):
     assert response[0]["email"] == "pending@example.com"
     assert response[0]["actif"] is False
     assert response[0]["statut_compte"] == StatutCompte.EN_ATTENTE.value
+    assert response[0]["demande_inscription"]["statut"] == (
+        StatutDemandeInscription.EN_ATTENTE.value
+    )
 
 
 def test_validate_user_accepts_pending_user(db_session):
@@ -73,6 +90,13 @@ def test_validate_user_accepts_pending_user(db_session):
         actif=False
     )
     db_session.add(user)
+    db_session.flush()
+    db_session.add(
+        DemandeInscription(
+            utilisateur_id=user.id,
+            statut=StatutDemandeInscription.EN_ATTENTE.value,
+        )
+    )
     db_session.commit()
 
     response = validate_user(
@@ -83,9 +107,56 @@ def test_validate_user_accepts_pending_user(db_session):
     )
 
     db_session.refresh(user)
+    demande = (
+        db_session.query(DemandeInscription)
+        .filter(DemandeInscription.utilisateur_id == user.id)
+        .first()
+    )
 
     assert response["message"] == "Demande traitée avec succès"
     assert user.actif is True
+    assert demande.statut == StatutDemandeInscription.ACCEPTEE.value
+    assert demande.date_traitement is not None
+
+
+def test_validate_user_refuses_pending_user(db_session):
+    user = Utilisateur(
+        prenom="Josiane",
+        nom="Mutwarekazi",
+        email="refusee@example.com",
+        mot_de_passe_hash="hash",
+        role="utilisateur",
+        actif=False
+    )
+    db_session.add(user)
+    db_session.flush()
+    db_session.add(
+        DemandeInscription(
+            utilisateur_id=user.id,
+            statut=StatutDemandeInscription.EN_ATTENTE.value,
+        )
+    )
+    db_session.commit()
+
+    response = validate_user(
+        user_id=user.id,
+        accept=False,
+        db=db_session,
+        admin={"role": "admin"}
+    )
+
+    db_session.refresh(user)
+    demande = (
+        db_session.query(DemandeInscription)
+        .filter(DemandeInscription.utilisateur_id == user.id)
+        .first()
+    )
+
+    assert response["message"] == "Demande traitée avec succès"
+    assert user.actif is False
+    assert user.statut_compte == StatutCompte.REFUSE.value
+    assert demande.statut == StatutDemandeInscription.REFUSEE.value
+    assert demande.date_traitement is not None
 
 
 def test_list_users_returns_all_users_in_descending_id_order(db_session):

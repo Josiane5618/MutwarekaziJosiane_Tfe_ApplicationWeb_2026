@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -5,9 +6,11 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.dependencies import get_db
+from app.models.demande_inscription import DemandeInscription
 from app.models.log_acces import LogAcces
 from app.models.reservation import Reservation
 from app.models.salle import Salle
+from app.models.statuts import StatutDemandeInscription
 from app.models.utilisateur import Utilisateur
 from app.models.notification import Notification
 from app.security.dependencies import get_current_admin
@@ -46,6 +49,7 @@ def serialize_user(user: Utilisateur):
         "role": user.role,
         "actif": user.actif,
         "statut_compte": user.statut_compte,
+        "demande_inscription": serialize_demande_inscription(user),
     }
 
 
@@ -57,6 +61,29 @@ def serialize_salle(salle: Salle):
         "capacite": salle.capacite,
         "active": salle.active,
         "statut_salle": salle.statut_salle,
+    }
+
+
+def serialize_demande_inscription(user: Utilisateur):
+    demande = max(
+        user.demandes_inscription,
+        key=lambda demande_inscription: demande_inscription.id or 0,
+        default=None,
+    )
+
+    if demande is None:
+        return None
+
+    return {
+        "id": demande.id,
+        "statut": demande.statut,
+        "date_soumission": demande.date_soumission.isoformat(),
+        "date_traitement": (
+            demande.date_traitement.isoformat()
+            if demande.date_traitement
+            else None
+        ),
+        "commentaire_refus": demande.commentaire_refus,
     }
 
 
@@ -103,11 +130,13 @@ def list_pending_users(
 ):
     users = (
         db.query(Utilisateur)
+        .join(DemandeInscription)
         .filter(
             Utilisateur.role == "utilisateur",
             Utilisateur.actif == False,
+            DemandeInscription.statut == StatutDemandeInscription.EN_ATTENTE.value,
         )
-        .order_by(Utilisateur.id.desc())
+        .order_by(DemandeInscription.date_soumission.desc())
         .all()
     )
 
@@ -302,6 +331,25 @@ def validate_user(
         raise HTTPException(status_code=404, detail="Utilisateur introuvable")
 
     user.actif = accept
+    demande = (
+        db.query(DemandeInscription)
+        .filter(DemandeInscription.utilisateur_id == user.id)
+        .first()
+    )
+
+    if demande is None:
+        demande = DemandeInscription(
+            utilisateur_id=user.id,
+            statut=StatutDemandeInscription.EN_ATTENTE.value,
+        )
+        db.add(demande)
+
+    demande.statut = (
+        StatutDemandeInscription.ACCEPTEE.value
+        if accept
+        else StatutDemandeInscription.REFUSEE.value
+    )
+    demande.date_traitement = datetime.utcnow()
 
     if accept:
         send_email(

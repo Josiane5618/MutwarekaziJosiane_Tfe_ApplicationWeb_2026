@@ -5,7 +5,9 @@ from typing import Optional
 from pydantic import BaseModel, EmailStr, Field
 
 from app.dependencies import get_db
+from app.models.demande_inscription import DemandeInscription
 from app.models.donnee_faciale import DonneeFaciale
+from app.models.statuts import StatutDemandeInscription
 from app.models.utilisateur import Utilisateur
 from app.schemas.user import UserLogin
 from app.face_recognition.engine import extract_face_encoding
@@ -74,12 +76,20 @@ async def register_user(
         encodage=encoding.tobytes()
     )
     db.add(face_data)
+
+    demande = DemandeInscription(
+        utilisateur_id=new_user.id,
+        statut=StatutDemandeInscription.EN_ATTENTE.value,
+    )
+    db.add(demande)
+
     db.commit()
     db.refresh(new_user)
 
     return {
         "message": "Demande d’inscription envoyée. En attente de validation.",
-        "user_id": new_user.id
+        "user_id": new_user.id,
+        "demande_id": demande.id,
     }
 
 

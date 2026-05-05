@@ -5,9 +5,10 @@ from app.config import (
     DEFAULT_ADMIN_PRENOM,
 )
 from app.database import Base, SessionLocal, engine
+from app.models.demande_inscription import DemandeInscription
 from app.models.notification import Notification
 from app.models.salle import Salle
-from app.models.statuts import StatutReservation
+from app.models.statuts import StatutDemandeInscription, StatutReservation
 from app.models.utilisateur import Utilisateur
 from app.security.password import hash_password
 from sqlalchemy import inspect, text
@@ -35,6 +36,7 @@ DEFAULT_SALLES = [
 def bootstrap_database() -> None:
     Base.metadata.create_all(bind=engine)
     ensure_schema_columns()
+    ensure_missing_registration_requests()
     ensure_default_admin()
     ensure_default_salles()
 
@@ -58,6 +60,39 @@ def ensure_schema_columns() -> None:
                     f"DEFAULT '{StatutReservation.CONFIRMEE.value}'"
                 )
             )
+
+
+def ensure_missing_registration_requests() -> None:
+    db = SessionLocal()
+
+    try:
+        inactive_users = (
+            db.query(Utilisateur)
+            .filter(
+                Utilisateur.role == "utilisateur",
+                Utilisateur.actif == False,
+            )
+            .all()
+        )
+
+        for user in inactive_users:
+            existing_request = (
+                db.query(DemandeInscription)
+                .filter(DemandeInscription.utilisateur_id == user.id)
+                .first()
+            )
+
+            if existing_request is None:
+                db.add(
+                    DemandeInscription(
+                        utilisateur_id=user.id,
+                        statut=StatutDemandeInscription.EN_ATTENTE.value,
+                    )
+                )
+
+        db.commit()
+    finally:
+        db.close()
 
 
 def ensure_default_admin() -> None:

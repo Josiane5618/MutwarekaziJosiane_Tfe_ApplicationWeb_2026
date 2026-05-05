@@ -7,6 +7,12 @@ class StatutCompte(str, Enum):
     REFUSE = "REFUSE"
 
 
+class StatutDemandeInscription(str, Enum):
+    EN_ATTENTE = "EN_ATTENTE"
+    ACCEPTEE = "ACCEPTEE"
+    REFUSEE = "REFUSEE"
+
+
 class StatutReservation(str, Enum):
     CONFIRMEE = "CONFIRMEE"
     ANNULEE = "ANNULEE"
