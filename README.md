@@ -282,6 +282,10 @@ Par exemple :
 
 La principale différence est la classe `Administrateur`. Dans le code, il n'y a pas une table séparée `Administrateur`. Un administrateur est un `Utilisateur` avec le rôle `admin`. C'est une simplification volontaire, car cela évite de dupliquer les informations communes comme le nom, l'email et le mot de passe.
 
+Le diagramme de classes présente donc l'administrateur comme une spécialisation de l'utilisateur. Dans le code, cette spécialisation est représentée par l'attribut `role`. Quand `role` vaut `admin`, l'utilisateur a accès aux routes d'administration. Cette solution est plus simple pour une application web et garde la même logique métier : l'administrateur reste un utilisateur, mais avec plus de droits.
+
+J'aurais pu créer une vraie classe `Administrateur` avec de l'héritage, mais cela aurait rendu la base de données et l'authentification plus compliquées. Pour ce projet, j'ai donc choisi une solution plus légère et plus facile à expliquer.
+
 Le premier administrateur est créé automatiquement par le backend avec les variables de configuration. Il n'est pas créé par le formulaire public d'inscription.
 
 ### Points Encore Simplifiés
