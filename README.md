@@ -256,6 +256,7 @@ Les énumérations du diagramme sont aussi représentées avec :
 - `StatutDemandeInscription`
 - `StatutReservation`
 - `StatutSalle`
+- `Role`, représenté dans le code par l'attribut `role` de `Utilisateur`
 
 Les noms d'attributs sont proches, mais pas toujours exactement identiques.
 
@@ -282,7 +283,11 @@ Par exemple :
 
 La principale différence est la classe `Administrateur`. Dans le code, il n'y a pas une table séparée `Administrateur`. Un administrateur est un `Utilisateur` avec le rôle `admin`. C'est une simplification volontaire, car cela évite de dupliquer les informations communes comme le nom, l'email et le mot de passe.
 
-Le diagramme de classes présente donc l'administrateur comme une spécialisation de l'utilisateur. Dans le code, cette spécialisation est représentée par l'attribut `role`. Quand `role` vaut `admin`, l'utilisateur a accès aux routes d'administration. Cette solution est plus simple pour une application web et garde la même logique métier : l'administrateur reste un utilisateur, mais avec plus de droits.
+Le diagramme de classes présente l'administrateur comme une spécialisation de l'utilisateur, mais il montre aussi une énumération `Role` avec les valeurs `UTILISATEUR` et `ADMINISTRATEUR`. Il y a donc déjà l'idée qu'un utilisateur possède un rôle. Dans le code, cette spécialisation est représentée par l'attribut `role`. Quand `role` vaut `admin`, l'utilisateur a accès aux routes d'administration.
+
+Les actions propres à l'administrateur, comme traiter les demandes, consulter les logs ou gérer les salles, sont donc placées dans les routes `/admin`. Ces routes sont protégées et ne sont accessibles qu'aux comptes ayant le rôle `admin`.
+
+Cette solution est plus simple pour une application web et garde la même logique métier : l'administrateur reste un utilisateur, mais avec plus de droits.
 
 J'aurais pu créer une vraie classe `Administrateur` avec de l'héritage, mais cela aurait rendu la base de données et l'authentification plus compliquées. Pour ce projet, j'ai donc choisi une solution plus légère et plus facile à expliquer.
 
