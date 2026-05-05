@@ -168,6 +168,14 @@ export default function UserDashboard({ token, onLogout }) {
   };
 
   const startReservationEdit = reservation => {
+    if (reservation.statut === "ANNULEE") {
+      setFeedback({
+        type: "error",
+        message: "Une réservation annulée ne peut pas être modifiée."
+      });
+      return;
+    }
+
     setEditingReservationId(reservation.id);
     setEditReservationForm({
       salleId: String(reservation.salle_id),
@@ -819,6 +827,7 @@ export default function UserDashboard({ token, onLogout }) {
                             <button
                               className="secondary-button"
                               type="button"
+                              disabled={reservation.statut === "ANNULEE"}
                               onClick={() => startReservationEdit(reservation)}
                             >
                               Modifier
@@ -826,12 +835,17 @@ export default function UserDashboard({ token, onLogout }) {
                             <button
                               className="danger-button"
                               type="button"
-                              disabled={cancelingReservationId === reservation.id}
+                              disabled={
+                                cancelingReservationId === reservation.id ||
+                                reservation.statut === "ANNULEE"
+                              }
                               onClick={() => handleCancelReservation(reservation.id)}
                             >
-                              {cancelingReservationId === reservation.id
-                                ? "Annulation..."
-                                : "Annuler"}
+                              {reservation.statut === "ANNULEE"
+                                ? "Annulée"
+                                : cancelingReservationId === reservation.id
+                                  ? "Annulation..."
+                                  : "Annuler"}
                             </button>
                           </div>
                         </div>

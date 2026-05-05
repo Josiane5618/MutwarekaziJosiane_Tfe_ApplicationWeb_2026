@@ -83,7 +83,8 @@ def test_user_can_cancel_own_reservation(db_session):
     )
 
     assert response["message"] == "Réservation annulée avec succès"
-    assert remaining_reservation is None
+    assert remaining_reservation is not None
+    assert remaining_reservation.statut == StatutReservation.ANNULEE.value
     assert notification is not None
     assert "annulée" in notification.message
 
@@ -159,6 +160,24 @@ def test_user_cannot_cancel_another_users_reservation(db_session):
     assert exc_info.value.status_code == 404
     assert exc_info.value.detail == "Réservation introuvable"
     assert still_existing is not None
+    assert still_existing.statut == StatutReservation.CONFIRMEE.value
+
+
+def test_user_cannot_cancel_already_cancelled_reservation(db_session):
+    user = create_user(db_session, "owner@example.com")
+    reservation = create_reservation(db_session, user.id)
+    reservation.statut = StatutReservation.ANNULEE.value
+    db_session.commit()
+
+    with pytest.raises(HTTPException) as exc_info:
+        annuler_reservation(
+            reservation_id=reservation.id,
+            db=db_session,
+            user={"user_id": user.id, "role": "utilisateur"}
+        )
+
+    assert exc_info.value.status_code == 400
+    assert exc_info.value.detail == "Cette réservation est déjà annulée"
 
 
 def test_user_can_update_own_reservation(db_session):
@@ -212,6 +231,30 @@ def test_user_cannot_update_another_users_reservation(db_session):
 
     assert exc_info.value.status_code == 404
     assert exc_info.value.detail == "Réservation introuvable"
+
+
+def test_user_cannot_update_cancelled_reservation(db_session):
+    user = create_user(db_session, "owner@example.com")
+    salle = create_salle(db_session)
+    reservation = create_reservation(db_session, user.id, salle=salle)
+    reservation.statut = StatutReservation.ANNULEE.value
+    db_session.commit()
+
+    with pytest.raises(HTTPException) as exc_info:
+        modifier_reservation(
+            reservation_id=reservation.id,
+            salle_id=salle.id,
+            date_reservation=date(2026, 5, 5),
+            heure_debut=time(11, 0),
+            heure_fin=time(12, 0),
+            db=db_session,
+            user={"user_id": user.id, "role": "utilisateur"}
+        )
+
+    assert exc_info.value.status_code == 400
+    assert exc_info.value.detail == (
+        "Une réservation annulée ne peut pas être modifiée"
+    )
 
 
 def test_update_reservation_rejects_room_conflict(db_session):

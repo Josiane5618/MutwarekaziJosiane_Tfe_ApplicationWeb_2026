@@ -129,6 +129,12 @@ def modifier_reservation(
             detail="Réservation introuvable"
         )
 
+    if reservation.statut == StatutReservation.ANNULEE.value:
+        raise HTTPException(
+            status_code=400,
+            detail="Une réservation annulée ne peut pas être modifiée"
+        )
+
     if heure_debut >= heure_fin:
         raise HTTPException(
             status_code=400,
@@ -191,7 +197,13 @@ def annuler_reservation(
             detail="Réservation introuvable"
         )
 
-    db.delete(reservation)
+    if reservation.statut == StatutReservation.ANNULEE.value:
+        raise HTTPException(
+            status_code=400,
+            detail="Cette réservation est déjà annulée"
+        )
+
+    reservation.statut = StatutReservation.ANNULEE.value
 
     notification = Notification(
         utilisateur_id=user["user_id"],
