@@ -27,6 +27,42 @@ def serialize_reservation(reservation: Reservation):
     }
 
 
+def validate_reservation_rules(
+    salle_id: int,
+    date_reservation: date,
+    heure_debut: time,
+    heure_fin: time,
+    db: Session,
+) -> Salle:
+    if date_reservation < date.today():
+        raise HTTPException(
+            status_code=400,
+            detail="La date de réservation ne peut pas être passée"
+        )
+
+    if heure_debut >= heure_fin:
+        raise HTTPException(
+            status_code=400,
+            detail="L'heure de début doit être antérieure à l'heure de fin"
+        )
+
+    salle = db.query(Salle).filter(Salle.id == salle_id).first()
+
+    if not salle:
+        raise HTTPException(
+            status_code=404,
+            detail="Salle introuvable"
+        )
+
+    if not salle.active:
+        raise HTTPException(
+            status_code=400,
+            detail="Cette salle n'est pas disponible"
+        )
+
+    return salle
+
+
 @router.get("/salles")
 def list_salles(
     db: Session = Depends(get_db),
@@ -57,11 +93,13 @@ def creer_reservation(
     db: Session = Depends(get_db),
     user=Depends(get_current_user)
 ):
-    if heure_debut >= heure_fin:
-        raise HTTPException(
-            status_code=400,
-            detail="L'heure de début doit être antérieure à l'heure de fin"
-        )
+    validate_reservation_rules(
+        salle_id=salle_id,
+        date_reservation=date_reservation,
+        heure_debut=heure_debut,
+        heure_fin=heure_fin,
+        db=db,
+    )
 
     conflit = (
         db.query(Reservation)
@@ -135,11 +173,13 @@ def modifier_reservation(
             detail="Une réservation annulée ne peut pas être modifiée"
         )
 
-    if heure_debut >= heure_fin:
-        raise HTTPException(
-            status_code=400,
-            detail="L'heure de début doit être antérieure à l'heure de fin"
-        )
+    validate_reservation_rules(
+        salle_id=salle_id,
+        date_reservation=date_reservation,
+        heure_debut=heure_debut,
+        heure_fin=heure_fin,
+        db=db,
+    )
 
     conflit = (
         db.query(Reservation)

@@ -28,6 +28,15 @@ function formatReservationStatus(status) {
   return status === "ANNULEE" ? "Annulée" : "Confirmée";
 }
 
+function getTodayInputValue() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
 export default function UserDashboard({ token, onLogout }) {
   const [user, setUser] = useState(null);
   const [salles, setSalles] = useState([]);
@@ -71,6 +80,7 @@ export default function UserDashboard({ token, onLogout }) {
   const sallesById = Object.fromEntries(
     salles.map(salle => [String(salle.id), salle])
   );
+  const todayInputValue = getTodayInputValue();
 
   const handleUnauthorized = () => {
     onLogout();
@@ -681,6 +691,7 @@ export default function UserDashboard({ token, onLogout }) {
                     <input
                       name="dateReservation"
                       type="date"
+                      min={todayInputValue}
                       value={reservationForm.dateReservation}
                       onChange={handleReservationChange}
                       required
@@ -754,6 +765,7 @@ export default function UserDashboard({ token, onLogout }) {
                             <input
                               name="dateReservation"
                               type="date"
+                              min={todayInputValue}
                               value={editReservationForm.dateReservation}
                               onChange={handleEditReservationChange}
                               required
