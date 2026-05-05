@@ -147,6 +147,7 @@ def get_me(
         "email": current_user.email,
         "role": current_user.role,
         "actif": current_user.actif,
+        "statut_compte": current_user.statut_compte,
     }
 
 
@@ -200,4 +201,5 @@ def update_me(
         "email": current_user.email,
         "role": current_user.role,
         "actif": current_user.actif,
+        "statut_compte": current_user.statut_compte,
     }

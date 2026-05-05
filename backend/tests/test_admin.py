@@ -7,6 +7,7 @@ from app.models.log_acces import LogAcces
 from app.models.notification import Notification
 from app.models.reservation import Reservation
 from app.models.salle import Salle
+from app.models.statuts import StatutCompte, StatutReservation, StatutSalle
 from app.models.utilisateur import Utilisateur
 from app.routers.admin import (
     SalleCreate,
@@ -59,6 +60,7 @@ def test_list_pending_users_returns_only_inactive_standard_users(db_session):
     assert len(response) == 1
     assert response[0]["email"] == "pending@example.com"
     assert response[0]["actif"] is False
+    assert response[0]["statut_compte"] == StatutCompte.EN_ATTENTE.value
 
 
 def test_validate_user_accepts_pending_user(db_session):
@@ -188,6 +190,7 @@ def test_admin_can_create_update_and_deactivate_salle(db_session):
     assert created["nom"] == "Salle A"
     assert created["capacite"] == 20
     assert created["active"] is True
+    assert created["statut_salle"] == StatutSalle.ACTIVE.value
 
     salle_id = created["id"]
     updated = update_salle(
@@ -204,6 +207,7 @@ def test_admin_can_create_update_and_deactivate_salle(db_session):
     assert updated["description"] == "Bloc principal"
     assert updated["capacite"] == 24
     assert updated["active"] is False
+    assert updated["statut_salle"] == StatutSalle.INACTIVE.value
 
     deleted = delete_salle(
         salle_id=salle_id,
@@ -264,6 +268,7 @@ def test_list_reservations_returns_user_and_room_details(db_session):
     assert response[0]["utilisateur"]["email"] == "josiane@example.com"
     assert response[0]["salle"]["nom"] == "Salle Reunion"
     assert response[0]["date"] == "2026-04-29"
+    assert response[0]["statut"] == StatutReservation.CONFIRMEE.value
 
 
 def test_list_access_logs_returns_user_details(db_session):

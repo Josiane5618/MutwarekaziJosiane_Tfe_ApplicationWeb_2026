@@ -45,6 +45,7 @@ def serialize_user(user: Utilisateur):
         "email": user.email,
         "role": user.role,
         "actif": user.actif,
+        "statut_compte": user.statut_compte,
     }
 
 
@@ -55,6 +56,7 @@ def serialize_salle(salle: Salle):
         "description": salle.description,
         "capacite": salle.capacite,
         "active": salle.active,
+        "statut_salle": salle.statut_salle,
     }
 
 
@@ -64,6 +66,7 @@ def serialize_reservation(reservation: Reservation):
         "date": reservation.date.isoformat(),
         "heure_debut": reservation.heure_debut.isoformat(),
         "heure_fin": reservation.heure_fin.isoformat(),
+        "statut": reservation.statut,
         "utilisateur": {
             "id": reservation.utilisateur.id,
             "prenom": reservation.utilisateur.prenom,

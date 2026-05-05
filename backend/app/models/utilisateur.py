@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, Boolean
 from app.database import Base
+from app.models.statuts import StatutCompte
 
 class Utilisateur(Base):
     __tablename__ = "utilisateurs"
@@ -11,3 +12,11 @@ class Utilisateur(Base):
     mot_de_passe_hash = Column(String(255), nullable=False)
     role = Column(String(50), default="utilisateur")
     actif = Column(Boolean, default=True)
+
+    @property
+    def statut_compte(self) -> str:
+        return (
+            StatutCompte.ACTIF.value
+            if self.actif
+            else StatutCompte.EN_ATTENTE.value
+        )

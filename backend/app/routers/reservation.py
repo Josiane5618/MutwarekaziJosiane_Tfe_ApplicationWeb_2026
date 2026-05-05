@@ -6,12 +6,25 @@ from app.dependencies import get_db
 from app.models.salle import Salle
 from app.models.reservation import Reservation
 from app.models.notification import Notification
+from app.models.statuts import StatutReservation
 from app.security.dependencies import get_current_user
 
 router = APIRouter(
     prefix="/reservations",
     tags=["Réservations"]
 )
+
+
+def serialize_reservation(reservation: Reservation):
+    return {
+        "id": reservation.id,
+        "utilisateur_id": reservation.utilisateur_id,
+        "salle_id": reservation.salle_id,
+        "date": reservation.date.isoformat(),
+        "heure_debut": reservation.heure_debut.isoformat(),
+        "heure_fin": reservation.heure_fin.isoformat(),
+        "statut": reservation.statut,
+    }
 
 
 @router.get("/salles")
@@ -27,11 +40,12 @@ def mes_reservations(
     db: Session = Depends(get_db),
     user=Depends(get_current_user)
 ):
-    return (
+    reservations = (
         db.query(Reservation)
         .filter(Reservation.utilisateur_id == user["user_id"])
         .all()
     )
+    return [serialize_reservation(reservation) for reservation in reservations]
 
 
 @router.post("/creer")
@@ -54,6 +68,7 @@ def creer_reservation(
         .filter(
             Reservation.salle_id == salle_id,
             Reservation.date == date_reservation,
+            Reservation.statut == StatutReservation.CONFIRMEE.value,
             Reservation.heure_debut < heure_fin,
             Reservation.heure_fin > heure_debut
         )
@@ -71,7 +86,8 @@ def creer_reservation(
         salle_id=salle_id,
         date=date_reservation,
         heure_debut=heure_debut,
-        heure_fin=heure_fin
+        heure_fin=heure_fin,
+        statut=StatutReservation.CONFIRMEE.value,
     )
 
     db.add(reservation)
@@ -125,6 +141,7 @@ def modifier_reservation(
             Reservation.id != reservation_id,
             Reservation.salle_id == salle_id,
             Reservation.date == date_reservation,
+            Reservation.statut == StatutReservation.CONFIRMEE.value,
             Reservation.heure_debut < heure_fin,
             Reservation.heure_fin > heure_debut
         )

@@ -7,8 +7,10 @@ from app.config import (
 from app.database import Base, SessionLocal, engine
 from app.models.notification import Notification
 from app.models.salle import Salle
+from app.models.statuts import StatutReservation
 from app.models.utilisateur import Utilisateur
 from app.security.password import hash_password
+from sqlalchemy import inspect, text
 
 LEGACY_DEFAULT_ADMIN_EMAIL = "admin@local.test"
 DEFAULT_SALLES = [
@@ -32,8 +34,30 @@ DEFAULT_SALLES = [
 
 def bootstrap_database() -> None:
     Base.metadata.create_all(bind=engine)
+    ensure_schema_columns()
     ensure_default_admin()
     ensure_default_salles()
+
+
+def ensure_schema_columns() -> None:
+    inspector = inspect(engine)
+
+    if "reservations" not in inspector.get_table_names():
+        return
+
+    reservation_columns = {
+        column["name"] for column in inspector.get_columns("reservations")
+    }
+
+    if "statut" not in reservation_columns:
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    "ALTER TABLE reservations "
+                    "ADD COLUMN statut VARCHAR(50) NOT NULL "
+                    f"DEFAULT '{StatutReservation.CONFIRMEE.value}'"
+                )
+            )
 
 
 def ensure_default_admin() -> None:

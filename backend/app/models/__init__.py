@@ -3,6 +3,7 @@ from app.models.log_acces import LogAcces
 from app.models.notification import Notification
 from app.models.reservation import Reservation
 from app.models.salle import Salle
+from app.models.statuts import StatutCompte, StatutReservation, StatutSalle
 from app.models.utilisateur import Utilisateur
 
 __all__ = [
@@ -11,5 +12,8 @@ __all__ = [
     "Notification",
     "Reservation",
     "Salle",
+    "StatutCompte",
+    "StatutReservation",
+    "StatutSalle",
     "Utilisateur",
 ]

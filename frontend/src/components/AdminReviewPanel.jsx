@@ -31,6 +31,30 @@ function formatReservationWindow(reservation) {
   return `${reservation.date} de ${reservation.heure_debut} à ${reservation.heure_fin}`;
 }
 
+function formatAccountStatus(status, active) {
+  if (status === "ACTIF" || active) {
+    return "Actif";
+  }
+
+  if (status === "REFUSE") {
+    return "Refusé";
+  }
+
+  return "En attente";
+}
+
+function formatSalleStatus(status, active) {
+  if (status === "ACTIVE" || active) {
+    return "Active";
+  }
+
+  return "Inactive";
+}
+
+function formatReservationStatus(status) {
+  return status === "ANNULEE" ? "Annulée" : "Confirmée";
+}
+
 function formatAccessResult(result) {
   return result === "ACCES_AUTORISE" ? "Accès autorisé" : "Accès refusé";
 }
@@ -577,12 +601,12 @@ export default function AdminReviewPanel({ token, onLogout }) {
                         </div>
                         <span
                           className={
-                            salle.active
+                            salle.statut_salle === "ACTIVE" || salle.active
                               ? "request-badge badge-success"
                               : "request-badge badge-muted"
                           }
                         >
-                          {salle.active ? "Active" : "Inactive"}
+                          {formatSalleStatus(salle.statut_salle, salle.active)}
                         </span>
                       </div>
 
@@ -634,12 +658,12 @@ export default function AdminReviewPanel({ token, onLogout }) {
                         </div>
                         <span
                           className={
-                            user.actif
+                            user.statut_compte === "ACTIF" || user.actif
                               ? "request-badge badge-success"
                               : "request-badge badge-warning"
                           }
                         >
-                          {user.actif ? "Actif" : "En attente"}
+                          {formatAccountStatus(user.statut_compte, user.actif)}
                         </span>
                       </div>
 
@@ -683,10 +707,21 @@ export default function AdminReviewPanel({ token, onLogout }) {
                 <div className="stack-list">
                   {reservations.map(reservation => (
                     <div className="stack-item" key={reservation.id}>
-                      <p className="request-name">
-                        {reservation.salle.nom} réservée par{" "}
-                        {reservation.utilisateur.prenom} {reservation.utilisateur.nom}
-                      </p>
+                      <div className="request-card-header">
+                        <p className="request-name">
+                          {reservation.salle.nom} réservée par{" "}
+                          {reservation.utilisateur.prenom} {reservation.utilisateur.nom}
+                        </p>
+                        <span
+                          className={
+                            reservation.statut === "ANNULEE"
+                              ? "request-badge badge-muted"
+                              : "request-badge badge-success"
+                          }
+                        >
+                          {formatReservationStatus(reservation.statut)}
+                        </span>
+                      </div>
                       <p className="request-email">
                         {formatReservationWindow(reservation)}
                       </p>

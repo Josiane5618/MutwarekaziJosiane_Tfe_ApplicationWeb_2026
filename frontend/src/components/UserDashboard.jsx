@@ -12,6 +12,22 @@ import {
 } from "../api/api";
 import CameraCapture from "./CameraCapture";
 
+function formatAccountStatus(status, active) {
+  if (status === "ACTIF" || active) {
+    return "Actif";
+  }
+
+  if (status === "REFUSE") {
+    return "Refusé";
+  }
+
+  return "En attente";
+}
+
+function formatReservationStatus(status) {
+  return status === "ANNULEE" ? "Annulée" : "Confirmée";
+}
+
 export default function UserDashboard({ token, onLogout }) {
   const [user, setUser] = useState(null);
   const [salles, setSalles] = useState([]);
@@ -487,6 +503,9 @@ export default function UserDashboard({ token, onLogout }) {
               </p>
               <p className="info-meta">{user?.email}</p>
               <p className="info-meta">Rôle : {user?.role}</p>
+              <p className="info-meta">
+                Statut : {formatAccountStatus(user?.statut_compte, user?.actif)}
+              </p>
             </article>
 
             <article className="info-card">
@@ -788,6 +807,15 @@ export default function UserDashboard({ token, onLogout }) {
                           </div>
 
                           <div className="request-actions">
+                            <span
+                              className={
+                                reservation.statut === "ANNULEE"
+                                  ? "request-badge badge-muted"
+                                  : "request-badge badge-success"
+                              }
+                            >
+                              {formatReservationStatus(reservation.statut)}
+                            </span>
                             <button
                               className="secondary-button"
                               type="button"

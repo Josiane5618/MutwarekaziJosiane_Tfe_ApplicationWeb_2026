@@ -6,8 +6,14 @@ from fastapi import HTTPException
 from app.models.notification import Notification
 from app.models.reservation import Reservation
 from app.models.salle import Salle
+from app.models.statuts import StatutReservation
 from app.models.utilisateur import Utilisateur
-from app.routers.reservation import annuler_reservation, modifier_reservation
+from app.routers.reservation import (
+    annuler_reservation,
+    creer_reservation,
+    mes_reservations,
+    modifier_reservation,
+)
 
 
 def create_user(db_session, email):
@@ -80,6 +86,56 @@ def test_user_can_cancel_own_reservation(db_session):
     assert remaining_reservation is None
     assert notification is not None
     assert "annulée" in notification.message
+
+
+def test_user_reservations_include_confirmed_status(db_session):
+    user = create_user(db_session, "owner@example.com")
+    reservation = create_reservation(db_session, user.id)
+
+    response = mes_reservations(
+        db=db_session,
+        user={"user_id": user.id, "role": "utilisateur"}
+    )
+
+    assert response == [
+        {
+            "id": reservation.id,
+            "utilisateur_id": user.id,
+            "salle_id": reservation.salle_id,
+            "date": "2026-05-04",
+            "heure_debut": "09:00:00",
+            "heure_fin": "10:00:00",
+            "statut": StatutReservation.CONFIRMEE.value,
+        }
+    ]
+
+
+def test_create_reservation_ignores_cancelled_reservation_conflict(db_session):
+    user = create_user(db_session, "owner@example.com")
+    salle = create_salle(db_session)
+    create_reservation(
+        db_session,
+        user.id,
+        salle=salle,
+        start=time(9, 0),
+        end=time(10, 0),
+    ).statut = StatutReservation.ANNULEE.value
+    db_session.commit()
+
+    response = creer_reservation(
+        salle_id=salle.id,
+        date_reservation=date(2026, 5, 4),
+        heure_debut=time(9, 30),
+        heure_fin=time(10, 30),
+        db=db_session,
+        user={"user_id": user.id, "role": "utilisateur"}
+    )
+
+    reservations = db_session.query(Reservation).all()
+
+    assert response["message"] == "Réservation créée avec succès"
+    assert len(reservations) == 2
+    assert reservations[-1].statut == StatutReservation.CONFIRMEE.value
 
 
 def test_user_cannot_cancel_another_users_reservation(db_session):
