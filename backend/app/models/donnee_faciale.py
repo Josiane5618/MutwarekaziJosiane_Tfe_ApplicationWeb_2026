@@ -14,3 +14,7 @@ class DonneeFaciale(Base):
     encodage = Column(LargeBinary, nullable=False)
 
     date_enregistrement = Column(DateTime, default=datetime.utcnow)
+    utilisateur = relationship(
+        "Utilisateur",
+        back_populates="donnees_faciales",
+    )

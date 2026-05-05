@@ -18,6 +18,11 @@ class Utilisateur(Base):
         "DemandeInscription",
         back_populates="utilisateur",
     )
+    donnees_faciales = relationship(
+        "DonneeFaciale",
+        back_populates="utilisateur",
+        uselist=False,
+    )
 
     @property
     def statut_compte(self) -> str:

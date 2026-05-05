@@ -569,6 +569,13 @@
   font-size: 0.95rem;
 }
 
+.request-meta-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 2px;
+}
+
 .request-badge {
   padding: 8px 12px;
   border-radius: 999px;
@@ -602,6 +609,26 @@
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+.face-preview {
+  display: grid;
+  gap: 8px;
+  margin: 4px 0 0;
+}
+
+.face-preview img {
+  width: min(220px, 100%);
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 18px;
+  border: 1px solid rgba(17, 36, 51, 0.12);
+  background: #f7fbfd;
+}
+
+.face-preview figcaption {
+  color: #4a6172;
+  font-size: 0.9rem;
 }
 
 .session-panel {

@@ -4,6 +4,7 @@ import pytest
 from fastapi import HTTPException
 
 from app.models.demande_inscription import DemandeInscription
+from app.models.donnee_faciale import DonneeFaciale
 from app.models.log_acces import LogAcces
 from app.models.notification import Notification
 from app.models.reservation import Reservation
@@ -26,6 +27,7 @@ from app.routers.admin import (
     list_reservations,
     list_salles_admin,
     list_users,
+    get_user_face_image,
     update_salle,
     update_user,
     validate_user,
@@ -78,6 +80,7 @@ def test_list_pending_users_returns_only_inactive_standard_users(db_session):
     assert response[0]["demande_inscription"]["statut"] == (
         StatutDemandeInscription.EN_ATTENTE.value
     )
+    assert response[0]["donnees_faciales_enregistrees"] is False
 
 
 def test_validate_user_accepts_pending_user(db_session):
@@ -186,6 +189,59 @@ def test_list_users_returns_all_users_in_descending_id_order(db_session):
         "beta@example.com",
         "alpha@example.com",
     ]
+
+
+def test_admin_can_view_registered_face_image(db_session):
+    user = Utilisateur(
+        prenom="Face",
+        nom="User",
+        email="face@example.com",
+        mot_de_passe_hash="hash",
+        role="utilisateur",
+        actif=False
+    )
+    db_session.add(user)
+    db_session.flush()
+    db_session.add(
+        DonneeFaciale(
+            utilisateur_id=user.id,
+            image=b"fake-image",
+            encodage=b"fake-encoding",
+        )
+    )
+    db_session.commit()
+
+    response = get_user_face_image(
+        user_id=user.id,
+        db=db_session,
+        admin={"role": "admin"}
+    )
+
+    assert response.body == b"fake-image"
+    assert response.media_type == "image/jpeg"
+
+
+def test_admin_face_image_returns_404_when_missing(db_session):
+    user = Utilisateur(
+        prenom="No",
+        nom="Face",
+        email="noface@example.com",
+        mot_de_passe_hash="hash",
+        role="utilisateur",
+        actif=False
+    )
+    db_session.add(user)
+    db_session.commit()
+
+    with pytest.raises(HTTPException) as exc_info:
+        get_user_face_image(
+            user_id=user.id,
+            db=db_session,
+            admin={"role": "admin"}
+        )
+
+    assert exc_info.value.status_code == 404
+    assert exc_info.value.detail == "Photo faciale introuvable"
 
 
 def test_admin_can_deactivate_standard_user(db_session):

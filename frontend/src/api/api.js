@@ -42,6 +42,14 @@ export async function getAdminUsers(token) {
   });
 }
 
+export async function getAdminUserFaceImage({ token, userId }) {
+  return fetch(`${API_URL}/admin/users/${userId}/face-image`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+}
+
 export async function updateAdminUser({ token, userId, data }) {
   return fetch(`${API_URL}/admin/users/${userId}`, {
     method: "PUT",

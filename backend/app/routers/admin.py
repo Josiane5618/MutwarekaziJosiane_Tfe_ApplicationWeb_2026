@@ -1,12 +1,13 @@
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.dependencies import get_db
 from app.models.demande_inscription import DemandeInscription
+from app.models.donnee_faciale import DonneeFaciale
 from app.models.log_acces import LogAcces
 from app.models.reservation import Reservation
 from app.models.salle import Salle
@@ -50,6 +51,9 @@ def serialize_user(user: Utilisateur):
         "actif": user.actif,
         "statut_compte": user.statut_compte,
         "demande_inscription": serialize_demande_inscription(user),
+        "donnees_faciales_enregistrees": bool(
+            user.donnees_faciales and user.donnees_faciales.image
+        ),
     }
 
 
@@ -150,6 +154,30 @@ def list_users(
 ):
     users = db.query(Utilisateur).order_by(Utilisateur.id.desc()).all()
     return [serialize_user(user) for user in users]
+
+
+@router.get("/users/{user_id}/face-image")
+def get_user_face_image(
+    user_id: int,
+    db: Session = Depends(get_db),
+    admin=Depends(get_current_admin)
+):
+    face_data = (
+        db.query(DonneeFaciale)
+        .filter(DonneeFaciale.utilisateur_id == user_id)
+        .first()
+    )
+
+    if not face_data or not face_data.image:
+        raise HTTPException(
+            status_code=404,
+            detail="Photo faciale introuvable"
+        )
+
+    return Response(
+        content=face_data.image,
+        media_type="image/jpeg",
+    )
 
 
 @router.put("/users/{user_id}")

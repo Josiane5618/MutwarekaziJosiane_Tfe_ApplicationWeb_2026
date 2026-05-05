@@ -5,6 +5,7 @@ import {
   getAdminAccessLogs,
   getAdminReservations,
   getAdminSalles,
+  getAdminUserFaceImage,
   getAdminUsers,
   getPendingUsers,
   updateAdminSalle,
@@ -25,6 +26,14 @@ function formatDateTime(value) {
   }
 
   return new Date(value).toLocaleString("fr-FR");
+}
+
+function formatRequestDate(request) {
+  if (!request?.date_soumission) {
+    return "Date de demande indisponible";
+  }
+
+  return `Demande envoyée le ${formatDateTime(request.date_soumission)}`;
 }
 
 function formatReservationWindow(reservation) {
@@ -75,6 +84,11 @@ export default function AdminReviewPanel({ token, onLogout }) {
   const [feedback, setFeedback] = useState({
     type: "",
     message: ""
+  });
+  const [facePreview, setFacePreview] = useState({
+    userId: null,
+    imageUrl: "",
+    isLoading: false
   });
 
   const handleUnauthorized = () => {
@@ -155,9 +169,80 @@ export default function AdminReviewPanel({ token, onLogout }) {
     loadDashboard();
   }, [token]);
 
+  useEffect(() => {
+    return () => {
+      if (facePreview.imageUrl) {
+        URL.revokeObjectURL(facePreview.imageUrl);
+      }
+    };
+  }, [facePreview.imageUrl]);
+
   const resetSalleForm = () => {
     setSalleForm(initialSalleForm);
     setEditingSalleId(null);
+  };
+
+  const handleFacePreview = async userId => {
+    if (facePreview.userId === userId && facePreview.imageUrl) {
+      setFacePreview({
+        userId: null,
+        imageUrl: "",
+        isLoading: false
+      });
+      return;
+    }
+
+    setFeedback({ type: "", message: "" });
+    setFacePreview({
+      userId,
+      imageUrl: "",
+      isLoading: true
+    });
+
+    try {
+      const response = await getAdminUserFaceImage({
+        token,
+        userId
+      });
+
+      if (response.status === 401 || response.status === 403) {
+        handleUnauthorized();
+        return;
+      }
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        setFeedback({
+          type: "error",
+          message: payload?.detail || "Photo faciale indisponible."
+        });
+        setFacePreview({
+          userId: null,
+          imageUrl: "",
+          isLoading: false
+        });
+        return;
+      }
+
+      const imageBlob = await response.blob();
+      const imageUrl = URL.createObjectURL(imageBlob);
+
+      setFacePreview({
+        userId,
+        imageUrl,
+        isLoading: false
+      });
+    } catch {
+      setFeedback({
+        type: "error",
+        message: "Impossible de charger la photo faciale."
+      });
+      setFacePreview({
+        userId: null,
+        imageUrl: "",
+        isLoading: false
+      });
+    }
   };
 
   const handleDecision = async (userId, accept) => {
@@ -472,11 +557,54 @@ export default function AdminReviewPanel({ token, onLogout }) {
                             {user.prenom} {user.nom}
                           </p>
                           <p className="request-email">{user.email}</p>
+                          <p className="request-meta">
+                            {formatRequestDate(user.demande_inscription)}
+                          </p>
                         </div>
                         <span className="request-badge">En attente</span>
                       </div>
 
+                      <div className="request-meta-grid">
+                        <span
+                          className={
+                            user.donnees_faciales_enregistrees
+                              ? "request-badge badge-success"
+                              : "request-badge badge-warning"
+                          }
+                        >
+                          {user.donnees_faciales_enregistrees
+                            ? "Photo faciale enregistrée"
+                            : "Photo faciale absente"}
+                        </span>
+                      </div>
+
+                      {facePreview.userId === user.id && facePreview.imageUrl ? (
+                        <figure className="face-preview">
+                          <img
+                            src={facePreview.imageUrl}
+                            alt={`Photo faciale de ${user.prenom} ${user.nom}`}
+                          />
+                          <figcaption>Photo fournie lors de l'inscription</figcaption>
+                        </figure>
+                      ) : null}
+
                       <div className="request-actions">
+                        <button
+                          className="secondary-button"
+                          type="button"
+                          disabled={
+                            isSubmitting ||
+                            facePreview.isLoading ||
+                            !user.donnees_faciales_enregistrees
+                          }
+                          onClick={() => handleFacePreview(user.id)}
+                        >
+                          {facePreview.userId === user.id && facePreview.imageUrl
+                            ? "Masquer la photo"
+                            : facePreview.userId === user.id && facePreview.isLoading
+                              ? "Chargement..."
+                              : "Voir la photo"}
+                        </button>
                         <button
                           className="submit-button"
                           type="button"
