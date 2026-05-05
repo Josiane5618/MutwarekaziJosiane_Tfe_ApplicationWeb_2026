@@ -177,6 +177,7 @@ def get_user_face_image(
     return Response(
         content=face_data.image,
         media_type="image/jpeg",
+        headers={"Cache-Control": "no-store"},
     )
 
 

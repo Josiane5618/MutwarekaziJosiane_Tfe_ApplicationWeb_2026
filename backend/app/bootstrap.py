@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from app.config import (
     DEFAULT_ADMIN_EMAIL,
     DEFAULT_ADMIN_NOM,
@@ -66,16 +68,13 @@ def ensure_missing_registration_requests() -> None:
     db = SessionLocal()
 
     try:
-        inactive_users = (
+        standard_users = (
             db.query(Utilisateur)
-            .filter(
-                Utilisateur.role == "utilisateur",
-                Utilisateur.actif == False,
-            )
+            .filter(Utilisateur.role == "utilisateur")
             .all()
         )
 
-        for user in inactive_users:
+        for user in standard_users:
             existing_request = (
                 db.query(DemandeInscription)
                 .filter(DemandeInscription.utilisateur_id == user.id)
@@ -83,10 +82,20 @@ def ensure_missing_registration_requests() -> None:
             )
 
             if existing_request is None:
+                request_status = (
+                    StatutDemandeInscription.ACCEPTEE.value
+                    if user.actif
+                    else StatutDemandeInscription.EN_ATTENTE.value
+                )
                 db.add(
                     DemandeInscription(
                         utilisateur_id=user.id,
-                        statut=StatutDemandeInscription.EN_ATTENTE.value,
+                        statut=request_status,
+                        date_traitement=(
+                            datetime.utcnow()
+                            if user.actif
+                            else None
+                        ),
                     )
                 )
 

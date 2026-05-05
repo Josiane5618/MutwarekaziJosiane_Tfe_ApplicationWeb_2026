@@ -795,7 +795,47 @@ export default function AdminReviewPanel({ token, onLogout }) {
                         </span>
                       </div>
 
+                      <div className="request-meta-grid">
+                        <span
+                          className={
+                            user.donnees_faciales_enregistrees
+                              ? "request-badge badge-success"
+                              : "request-badge badge-warning"
+                          }
+                        >
+                          {user.donnees_faciales_enregistrees
+                            ? "Photo faciale enregistrée"
+                            : "Photo faciale absente"}
+                        </span>
+                      </div>
+
+                      {facePreview.userId === user.id && facePreview.imageUrl ? (
+                        <figure className="face-preview">
+                          <img
+                            src={facePreview.imageUrl}
+                            alt={`Photo faciale de ${user.prenom} ${user.nom}`}
+                          />
+                          <figcaption>Photo liée au compte utilisateur</figcaption>
+                        </figure>
+                      ) : null}
+
                       <div className="request-actions">
+                        <button
+                          className="secondary-button"
+                          type="button"
+                          disabled={
+                            isSubmitting ||
+                            facePreview.isLoading ||
+                            !user.donnees_faciales_enregistrees
+                          }
+                          onClick={() => handleFacePreview(user.id)}
+                        >
+                          {facePreview.userId === user.id && facePreview.imageUrl
+                            ? "Masquer la photo"
+                            : facePreview.userId === user.id && facePreview.isLoading
+                              ? "Chargement..."
+                              : "Voir la photo"}
+                        </button>
                         <button
                           className={user.actif ? "danger-button" : "secondary-button"}
                           type="button"
