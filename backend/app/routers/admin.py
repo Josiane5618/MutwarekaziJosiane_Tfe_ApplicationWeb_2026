@@ -15,6 +15,7 @@ from app.models.statuts import StatutDemandeInscription
 from app.models.utilisateur import Utilisateur
 from app.models.notification import Notification
 from app.security.dependencies import get_current_admin
+from app.config import SMTP_ENABLED
 from app.utils.email_service import send_email
 
 router = APIRouter(
@@ -427,7 +428,7 @@ def validate_user(
     demande.date_traitement = datetime.utcnow()
 
     if accept:
-        send_email(
+        email_envoye = send_email(
             user.email,
             "Inscription acceptée",
             "Votre compte a été validé. Vous pouvez maintenant vous connecter."
@@ -436,7 +437,7 @@ def validate_user(
             "Votre compte a ete valide par un administrateur."
         )
     else:
-        send_email(
+        email_envoye = send_email(
             user.email,
             "Inscription refusée",
             "Votre demande d'inscription a été refusée."
@@ -453,4 +454,8 @@ def validate_user(
     )
 
     db.commit()
-    return {"message": "Demande traitée avec succès"}
+    return {
+        "message": "Demande traitée avec succès",
+        "email_envoye": email_envoye,
+        "email_mode": "smtp" if SMTP_ENABLED else "console",
+    }

@@ -93,6 +93,18 @@ function formatAccessResult(result) {
   return result === "ACCES_AUTORISE" ? "Accès autorisé" : "Accès refusé";
 }
 
+function formatEmailResult(payload) {
+  if (payload?.email_mode === "smtp" && payload?.email_envoye) {
+    return "Email envoyé vers Mailpit ou le serveur SMTP configuré.";
+  }
+
+  if (payload?.email_mode === "smtp" && !payload?.email_envoye) {
+    return "Email non envoyé : vérifiez Mailpit ou la configuration SMTP.";
+  }
+
+  return "Email affiché dans le terminal backend, car SMTP n'est pas activé.";
+}
+
 export default function AdminReviewPanel({ token, onLogout }) {
   const [dashboard, setDashboard] = useState({
     pendingUsers: [],
@@ -303,8 +315,7 @@ export default function AdminReviewPanel({ token, onLogout }) {
       setFeedback({
         type: "success",
         message:
-          payload?.message ||
-          "La demande a été traitée avec succès."
+          `${payload?.message || "La demande a été traitée avec succès."} ${formatEmailResult(payload)}`
       });
       await loadDashboard({ silent: true });
     } catch {

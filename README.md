@@ -104,6 +104,18 @@ SMTP_PORT=1025
 SMTP_FROM_EMAIL=noreply@gestion-acces.dev
 ```
 
+Pour une démonstration, le scénario est simple :
+
+1. lancer Mailpit
+2. lancer le backend avec `SMTP_ENABLED=true`
+3. lancer le frontend
+4. inscrire un nouvel utilisateur
+5. se connecter comme administrateur
+6. accepter ou refuser la demande
+7. ouvrir `http://127.0.0.1:8025` pour voir l'email reçu
+
+Après la décision administrateur, l'interface affiche aussi si l'email a été envoyé vers SMTP ou seulement affiché dans le terminal.
+
 ## Lancer Le Projet
 
 Il faut lancer le backend et le frontend dans deux terminaux séparés.

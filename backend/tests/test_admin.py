@@ -118,6 +118,8 @@ def test_validate_user_accepts_pending_user(db_session):
     )
 
     assert response["message"] == "Demande traitée avec succès"
+    assert response["email_envoye"] is False
+    assert response["email_mode"] == "console"
     assert user.actif is True
     assert demande.statut == StatutDemandeInscription.ACCEPTEE.value
     assert demande.date_traitement is not None
@@ -157,6 +159,8 @@ def test_validate_user_refuses_pending_user(db_session):
     )
 
     assert response["message"] == "Demande traitée avec succès"
+    assert response["email_envoye"] is False
+    assert response["email_mode"] == "console"
     assert user.actif is False
     assert user.statut_compte == StatutCompte.REFUSE.value
     assert demande.statut == StatutDemandeInscription.REFUSEE.value
