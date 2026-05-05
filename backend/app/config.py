@@ -77,3 +77,14 @@ DEFAULT_ADMIN_NOM = get_env("DEFAULT_ADMIN_NOM", "Local")
 API_HOST = get_env("API_HOST", "127.0.0.1")
 API_PORT = get_int_env("API_PORT", 8000)
 API_RELOAD = get_bool_env("API_RELOAD", True)
+
+SMTP_ENABLED = get_bool_env("SMTP_ENABLED", False)
+SMTP_HOST = get_env("SMTP_HOST", "127.0.0.1")
+SMTP_PORT = get_int_env("SMTP_PORT", 1025)
+SMTP_USERNAME = get_env("SMTP_USERNAME", "")
+SMTP_PASSWORD = get_env("SMTP_PASSWORD", "")
+SMTP_FROM_EMAIL = get_env(
+    "SMTP_FROM_EMAIL",
+    "noreply@gestion-acces.dev"
+)
+SMTP_USE_TLS = get_bool_env("SMTP_USE_TLS", False)

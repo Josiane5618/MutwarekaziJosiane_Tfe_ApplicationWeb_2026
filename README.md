@@ -77,6 +77,33 @@ L'utilisateur peut mettre à jour son profil : prénom, nom, email et éventuell
 
 Les notifications servent à informer l'utilisateur après certaines actions, comme une validation, une réservation ou une tentative d'accès.
 
+### Emails De Validation
+
+Quand l'administrateur accepte ou refuse une inscription, le backend peut aussi envoyer un email.
+
+Pour garder le projet simple pendant le développement, l'envoi SMTP est désactivé par défaut. Dans ce cas, l'email est affiché dans le terminal du backend.
+
+Pour tester un vrai envoi local sans envoyer de vrais emails, on peut utiliser Mailpit :
+
+```bash
+mailpit
+```
+
+Mailpit reçoit les emails sur le port SMTP `1025` et permet de les voir dans le navigateur :
+
+```text
+http://127.0.0.1:8025
+```
+
+Dans `backend/.env`, il faut alors activer :
+
+```env
+SMTP_ENABLED=true
+SMTP_HOST=127.0.0.1
+SMTP_PORT=1025
+SMTP_FROM_EMAIL=noreply@gestion-acces.dev
+```
+
 ## Lancer Le Projet
 
 Il faut lancer le backend et le frontend dans deux terminaux séparés.
@@ -132,6 +159,13 @@ Des exemples existent aussi avec :
 - `frontend/.env.example`
 
 Dans mon environnement actuel, le backend utilise PostgreSQL sur le port `5433`.
+
+Les emails peuvent être testés localement avec Mailpit. Les variables principales sont :
+
+- `SMTP_ENABLED`
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_FROM_EMAIL`
 
 ## Compte Administrateur
 
