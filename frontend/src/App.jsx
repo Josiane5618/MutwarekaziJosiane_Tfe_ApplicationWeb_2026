@@ -11,10 +11,7 @@ function App() {
     <main className={`register-page view-${view}`}>
       <section className="register-hero">
         <p className="eyebrow">Gestion d'accès</p>
-        <h1>Plateforme de gestion d'accès</h1>
-        <p className="hero-copy">
-          Gérez les inscriptions, l'accès au bâtiment et les réservations de salles.
-        </p>
+        <h1>Gestion d'accès à un bâtiment et réservation de salles</h1>
 
         <div className="hero-tabs" aria-label="Navigation principale">
           <button
