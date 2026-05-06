@@ -132,6 +132,12 @@
   font-size: 0.88rem;
 }
 
+.date-select-group {
+  display: grid;
+  grid-template-columns: 0.75fr 1.4fr 1fr;
+  gap: 8px;
+}
+
 .field input {
   width: 100%;
   min-width: 0;

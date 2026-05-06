@@ -28,6 +28,21 @@ function formatReservationStatus(status) {
   return status === "ANNULEE" ? "Annulée" : "Confirmée";
 }
 
+const MONTHS_FR = [
+  "janvier",
+  "février",
+  "mars",
+  "avril",
+  "mai",
+  "juin",
+  "juillet",
+  "août",
+  "septembre",
+  "octobre",
+  "novembre",
+  "décembre"
+];
+
 function formatDateFr(value) {
   if (!value) {
     return "date non renseignée";
@@ -90,6 +105,135 @@ function getTodayInputValue() {
   const day = String(today.getDate()).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
+}
+
+function getDatePartsFromIso(value) {
+  if (!value) {
+    return {
+      day: "",
+      month: "",
+      year: ""
+    };
+  }
+
+  const [year, month, day] = value.split("-");
+
+  return {
+    day: day || "",
+    month: month || "",
+    year: year || ""
+  };
+}
+
+function buildIsoDate({ day, month, year }) {
+  if (!day || !month || !year) {
+    return "";
+  }
+
+  return `${year}-${month}-${day}`;
+}
+
+function getYearOptions() {
+  const currentYear = new Date().getFullYear();
+  return Array.from({ length: 6 }, (_, index) => currentYear + index);
+}
+
+function FrenchDateField({ name, value, min, onChange }) {
+  const selected = getDatePartsFromIso(value);
+
+  const updateDatePart = (part, partValue) => {
+    const nextParts = {
+      ...selected,
+      [part]: partValue
+    };
+
+    if (nextParts.day && nextParts.month && nextParts.year) {
+      const maxDay = new Date(
+        Number(nextParts.year),
+        Number(nextParts.month),
+        0
+      ).getDate();
+
+      if (Number(nextParts.day) > maxDay) {
+        nextParts.day = String(maxDay).padStart(2, "0");
+      }
+    }
+
+    const nextDate = buildIsoDate(nextParts);
+
+    onChange({
+      target: {
+        name,
+        value: nextDate
+      }
+    });
+  };
+
+  const dayCount =
+    selected.month && selected.year
+      ? new Date(Number(selected.year), Number(selected.month), 0).getDate()
+      : 31;
+  const days = Array.from({ length: dayCount }, (_, index) =>
+    String(index + 1).padStart(2, "0")
+  );
+
+  return (
+    <>
+      <div className="date-select-group">
+        <select
+          className="field-select"
+          value={selected.day}
+          onChange={event => updateDatePart("day", event.target.value)}
+          required
+        >
+          <option value="">Jour</option>
+          {days.map(day => (
+            <option key={day} value={day}>
+              {day}
+            </option>
+          ))}
+        </select>
+
+        <select
+          className="field-select"
+          value={selected.month}
+          onChange={event => updateDatePart("month", event.target.value)}
+          required
+        >
+          <option value="">Mois</option>
+          {MONTHS_FR.map((month, index) => {
+            const monthValue = String(index + 1).padStart(2, "0");
+
+            return (
+              <option key={month} value={monthValue}>
+                {month}
+              </option>
+            );
+          })}
+        </select>
+
+        <select
+          className="field-select"
+          value={selected.year}
+          onChange={event => updateDatePart("year", event.target.value)}
+          required
+        >
+          <option value="">Année</option>
+          {getYearOptions().map(year => (
+            <option key={year} value={year}>
+              {year}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <small className="field-helper">
+        {value
+          ? formatDateFr(value)
+          : `Choisissez une date à partir du ${formatDateFr(min)}`}
+      </small>
+    </>
+  );
 }
 
 export default function UserDashboard({ token, onLogout }) {
@@ -789,20 +933,12 @@ export default function UserDashboard({ token, onLogout }) {
                 <div className="form-grid reservation-form-grid">
                   <label className="field field-full reservation-date-field">
                     <span>Date</span>
-                    <input
+                    <FrenchDateField
                       name="dateReservation"
-                      type="date"
-                      lang="fr-FR"
                       min={todayInputValue}
                       value={reservationForm.dateReservation}
                       onChange={handleReservationChange}
-                      required
                     />
-                    <small className="field-helper">
-                      {reservationForm.dateReservation
-                        ? formatDateFr(reservationForm.dateReservation)
-                        : "Format attendu : jour / mois / année"}
-                    </small>
                   </label>
 
                   <label className="field">
@@ -871,20 +1007,12 @@ export default function UserDashboard({ token, onLogout }) {
 
                           <label className="field">
                             <span>Date</span>
-                            <input
+                            <FrenchDateField
                               name="dateReservation"
-                              type="date"
-                              lang="fr-FR"
                               min={todayInputValue}
                               value={editReservationForm.dateReservation}
                               onChange={handleEditReservationChange}
-                              required
                             />
-                            <small className="field-helper">
-                              {editReservationForm.dateReservation
-                                ? formatDateFr(editReservationForm.dateReservation)
-                                : "Format attendu : jour / mois / année"}
-                            </small>
                           </label>
 
                           <label className="field">
