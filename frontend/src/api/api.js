@@ -7,6 +7,16 @@ export async function registerUser(formData) {
   });
 }
 
+export async function detectFaceBox(file) {
+  const formData = new FormData();
+  formData.append("file", file, "face-detection-capture.jpg");
+
+  return fetch(`${API_URL}/face/detect`, {
+    method: "POST",
+    body: formData
+  });
+}
+
 export async function loginUser(data) {
   return fetch(`${API_URL}/auth/login`, {
     method: "POST",

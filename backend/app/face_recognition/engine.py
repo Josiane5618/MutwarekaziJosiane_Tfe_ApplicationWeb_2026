@@ -43,6 +43,46 @@ def _load_face_models():
         face_rec_model = dlib.face_recognition_model_v1(REC_MODEL_PATH)
 
 
+def _decode_image(image_bytes: bytes):
+    image_array = np.frombuffer(image_bytes, np.uint8)
+    return cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+
+
+def detect_face_box(image_bytes: bytes):
+    """
+    Détecte le premier visage et retourne un rectangle en pourcentage.
+    Ces coordonnées sont adaptées à un affichage frontend responsive.
+    """
+    _load_face_models()
+
+    image = _decode_image(image_bytes)
+
+    if image is None:
+        return None
+
+    height, width = image.shape[:2]
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    faces = detector(gray, 1)
+
+    if not faces:
+        return None
+
+    face = faces[0]
+    left = max(face.left(), 0)
+    top = max(face.top(), 0)
+    right = min(face.right(), width)
+    bottom = min(face.bottom(), height)
+
+    return {
+        "x": left / width * 100,
+        "y": top / height * 100,
+        "width": (right - left) / width * 100,
+        "height": (bottom - top) / height * 100,
+        "image_width": width,
+        "image_height": height,
+    }
+
+
 def extract_face_encoding(image_bytes: bytes):
     """
     Extrait l'encodage facial (numpy array de taille 128)
@@ -50,8 +90,7 @@ def extract_face_encoding(image_bytes: bytes):
     """
     _load_face_models()
 
-    image_array = np.frombuffer(image_bytes, np.uint8)
-    image = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+    image = _decode_image(image_bytes)
 
     if image is None:
         return None

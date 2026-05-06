@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { detectFaceBox } from "../api/api";
 
 export default function CameraCapture({ onCapture, hasCapture }) {
   const videoRef = useRef(null);
@@ -6,7 +7,9 @@ export default function CameraCapture({ onCapture, hasCapture }) {
   const streamRef = useRef(null);
   const [cameraOn, setCameraOn] = useState(false);
   const [previewUrl, setPreviewUrl] = useState("");
+  const [faceBox, setFaceBox] = useState(null);
   const [cameraError, setCameraError] = useState("");
+  const [faceDetectionMessage, setFaceDetectionMessage] = useState("");
 
   useEffect(() => {
     return () => {
@@ -35,6 +38,8 @@ export default function CameraCapture({ onCapture, hasCapture }) {
 
   const startCamera = async () => {
     setCameraError("");
+    setFaceBox(null);
+    setFaceDetectionMessage("");
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -57,7 +62,7 @@ export default function CameraCapture({ onCapture, hasCapture }) {
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     canvas.toBlob(
-      (blob) => {
+      async (blob) => {
         if (blob) {
           if (previewUrl) {
             URL.revokeObjectURL(previewUrl);
@@ -67,6 +72,25 @@ export default function CameraCapture({ onCapture, hasCapture }) {
           setPreviewUrl(nextPreviewUrl);
           onCapture(blob);
           stopCamera();
+
+          try {
+            const response = await detectFaceBox(blob);
+            const payload = await response.json().catch(() => null);
+
+            if (!response.ok) {
+              setFaceBox(null);
+              setFaceDetectionMessage(
+                payload?.detail || "Aucun visage détecté sur la capture."
+              );
+              return;
+            }
+
+            setFaceBox(payload.box);
+            setFaceDetectionMessage("Visage détecté sur la capture.");
+          } catch {
+            setFaceBox(null);
+            setFaceDetectionMessage("Détection du visage indisponible.");
+          }
         }
       },
       "image/jpeg",
@@ -80,6 +104,8 @@ export default function CameraCapture({ onCapture, hasCapture }) {
       setPreviewUrl("");
     }
 
+    setFaceBox(null);
+    setFaceDetectionMessage("");
     onCapture(null);
     startCamera();
   };
@@ -99,10 +125,35 @@ export default function CameraCapture({ onCapture, hasCapture }) {
       </p>
 
       {cameraError ? <div className="feedback feedback-error">{cameraError}</div> : null}
+      {faceDetectionMessage ? (
+        <div
+          className={
+            faceBox
+              ? "feedback feedback-success"
+              : "feedback feedback-error"
+          }
+        >
+          {faceDetectionMessage}
+        </div>
+      ) : null}
 
       <div className="camera-preview">
         {previewUrl ? (
-          <img src={previewUrl} alt="Capture faciale" className="preview-image" />
+          <>
+            <img src={previewUrl} alt="Capture faciale" className="preview-image" />
+            {faceBox ? (
+              <div
+                className="face-detection-box"
+                aria-label="Visage détecté"
+                style={{
+                  left: `${faceBox.x}%`,
+                  top: `${faceBox.y}%`,
+                  width: `${faceBox.width}%`,
+                  height: `${faceBox.height}%`
+                }}
+              />
+            ) : null}
+          </>
         ) : (
           <video
             ref={videoRef}

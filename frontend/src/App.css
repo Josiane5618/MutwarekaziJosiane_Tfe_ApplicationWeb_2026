@@ -247,6 +247,31 @@
     linear-gradient(135deg, rgba(21, 94, 239, 0.3), rgba(11, 122, 117, 0.18));
 }
 
+.face-detection-box {
+  position: absolute;
+  border: 3px solid #2dd4bf;
+  border-radius: 18px;
+  box-shadow:
+    0 0 0 999px rgba(15, 34, 51, 0.16),
+    0 0 24px rgba(45, 212, 191, 0.55);
+  pointer-events: none;
+}
+
+.face-detection-box::after {
+  content: "Visage détecté";
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  white-space: nowrap;
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: #0b7a75;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
 .camera-actions {
   display: flex;
   gap: 12px;
