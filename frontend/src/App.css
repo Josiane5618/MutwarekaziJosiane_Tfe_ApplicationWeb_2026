@@ -127,6 +127,11 @@
   color: #18354a;
 }
 
+.field-helper {
+  color: #4a6172;
+  font-size: 0.88rem;
+}
+
 .field input {
   width: 100%;
   min-width: 0;

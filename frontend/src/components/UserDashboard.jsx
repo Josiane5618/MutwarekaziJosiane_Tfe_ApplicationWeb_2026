@@ -35,6 +35,7 @@ function formatDateFr(value) {
 
   const [year, month, day] = value.split("-").map(Number);
   return new Date(year, month - 1, day).toLocaleDateString("fr-FR", {
+    weekday: "long",
     day: "2-digit",
     month: "long",
     year: "numeric"
@@ -791,11 +792,17 @@ export default function UserDashboard({ token, onLogout }) {
                     <input
                       name="dateReservation"
                       type="date"
+                      lang="fr-FR"
                       min={todayInputValue}
                       value={reservationForm.dateReservation}
                       onChange={handleReservationChange}
                       required
                     />
+                    <small className="field-helper">
+                      {reservationForm.dateReservation
+                        ? formatDateFr(reservationForm.dateReservation)
+                        : "Format attendu : jour / mois / année"}
+                    </small>
                   </label>
 
                   <label className="field">
@@ -803,6 +810,7 @@ export default function UserDashboard({ token, onLogout }) {
                     <input
                       name="heureDebut"
                       type="time"
+                      lang="fr-FR"
                       value={reservationForm.heureDebut}
                       onChange={handleReservationChange}
                       required
@@ -814,6 +822,7 @@ export default function UserDashboard({ token, onLogout }) {
                     <input
                       name="heureFin"
                       type="time"
+                      lang="fr-FR"
                       value={reservationForm.heureFin}
                       onChange={handleReservationChange}
                       required
@@ -865,11 +874,17 @@ export default function UserDashboard({ token, onLogout }) {
                             <input
                               name="dateReservation"
                               type="date"
+                              lang="fr-FR"
                               min={todayInputValue}
                               value={editReservationForm.dateReservation}
                               onChange={handleEditReservationChange}
                               required
                             />
+                            <small className="field-helper">
+                              {editReservationForm.dateReservation
+                                ? formatDateFr(editReservationForm.dateReservation)
+                                : "Format attendu : jour / mois / année"}
+                            </small>
                           </label>
 
                           <label className="field">
@@ -877,6 +892,7 @@ export default function UserDashboard({ token, onLogout }) {
                             <input
                               name="heureDebut"
                               type="time"
+                              lang="fr-FR"
                               value={editReservationForm.heureDebut}
                               onChange={handleEditReservationChange}
                               required
@@ -888,6 +904,7 @@ export default function UserDashboard({ token, onLogout }) {
                             <input
                               name="heureFin"
                               type="time"
+                              lang="fr-FR"
                               value={editReservationForm.heureFin}
                               onChange={handleEditReservationChange}
                               required

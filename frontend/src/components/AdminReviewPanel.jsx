@@ -71,6 +71,7 @@ function formatReservationWindow(reservation) {
   const formattedDate = new Date(year, month - 1, day).toLocaleDateString(
     "fr-FR",
     {
+      weekday: "long",
       day: "2-digit",
       month: "long",
       year: "numeric"
