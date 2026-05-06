@@ -138,6 +138,12 @@
   gap: 8px;
 }
 
+.time-select-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
 .field input {
   width: 100%;
   min-width: 0;

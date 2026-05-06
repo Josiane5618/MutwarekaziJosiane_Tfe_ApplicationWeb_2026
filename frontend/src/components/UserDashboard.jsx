@@ -159,6 +159,22 @@ function getDatePartsFromIso(value) {
   };
 }
 
+function getTimeParts(value) {
+  if (!value) {
+    return {
+      hour: "",
+      minute: ""
+    };
+  }
+
+  const [hour, minute] = value.split(":");
+
+  return {
+    hour: hour || "",
+    minute: minute || ""
+  };
+}
+
 function buildIsoDate({ day, month, year }) {
   if (!day || !month || !year) {
     return "";
@@ -167,9 +183,27 @@ function buildIsoDate({ day, month, year }) {
   return `${year}-${month}-${day}`;
 }
 
+function buildTimeValue({ hour, minute }) {
+  if (!hour || !minute) {
+    return "";
+  }
+
+  return `${hour}:${minute}`;
+}
+
 function getYearOptions() {
   const currentYear = new Date().getFullYear();
   return Array.from({ length: 6 }, (_, index) => currentYear + index);
+}
+
+function getHourOptions() {
+  return Array.from({ length: 24 }, (_, index) =>
+    String(index).padStart(2, "0")
+  );
+}
+
+function getMinuteOptions() {
+  return ["00", "15", "30", "45"];
 }
 
 function FrenchDateField({ name, value, min, onChange }) {
@@ -275,6 +309,65 @@ function FrenchDateField({ name, value, min, onChange }) {
           : `Choisissez une date à partir du ${formatDateFr(min)}`}
       </small>
     </>
+  );
+}
+
+function FrenchTimeField({ name, value, onChange }) {
+  const [selected, setSelected] = useState(getTimeParts(value));
+
+  useEffect(() => {
+    setSelected(getTimeParts(value));
+  }, [value]);
+
+  const updateTimePart = (part, partValue) => {
+    const nextParts = {
+      ...selected,
+      [part]: partValue
+    };
+    const nextValue = buildTimeValue(nextParts);
+
+    setSelected(nextParts);
+
+    if (nextValue || value) {
+      onChange({
+        target: {
+          name,
+          value: nextValue
+        }
+      });
+    }
+  };
+
+  return (
+    <div className="time-select-group">
+      <select
+        className="field-select"
+        value={selected.hour}
+        onChange={event => updateTimePart("hour", event.target.value)}
+        required
+      >
+        <option value="">Heure</option>
+        {getHourOptions().map(hour => (
+          <option key={hour} value={hour}>
+            {hour} h
+          </option>
+        ))}
+      </select>
+
+      <select
+        className="field-select"
+        value={selected.minute}
+        onChange={event => updateTimePart("minute", event.target.value)}
+        required
+      >
+        <option value="">Minute</option>
+        {getMinuteOptions().map(minute => (
+          <option key={minute} value={minute}>
+            {minute}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 }
 
@@ -1020,25 +1113,19 @@ export default function UserDashboard({ token, onLogout }) {
 
                   <label className="field">
                     <span>Heure de début</span>
-                    <input
+                    <FrenchTimeField
                       name="heureDebut"
-                      type="time"
-                      lang="fr-FR"
                       value={reservationForm.heureDebut}
                       onChange={handleReservationChange}
-                      required
                     />
                   </label>
 
                   <label className="field">
                     <span>Heure de fin</span>
-                    <input
+                    <FrenchTimeField
                       name="heureFin"
-                      type="time"
-                      lang="fr-FR"
                       value={reservationForm.heureFin}
                       onChange={handleReservationChange}
-                      required
                     />
                   </label>
                 </div>
@@ -1094,25 +1181,19 @@ export default function UserDashboard({ token, onLogout }) {
 
                           <label className="field">
                             <span>Début</span>
-                            <input
+                            <FrenchTimeField
                               name="heureDebut"
-                              type="time"
-                              lang="fr-FR"
                               value={editReservationForm.heureDebut}
                               onChange={handleEditReservationChange}
-                              required
                             />
                           </label>
 
                           <label className="field">
                             <span>Fin</span>
-                            <input
+                            <FrenchTimeField
                               name="heureFin"
-                              type="time"
-                              lang="fr-FR"
                               value={editReservationForm.heureFin}
                               onChange={handleEditReservationChange}
-                              required
                             />
                           </label>
 
