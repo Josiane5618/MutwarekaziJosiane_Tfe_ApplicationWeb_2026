@@ -11,7 +11,10 @@ function App() {
     <main className={`register-page view-${view}`}>
       <section className="register-hero">
         <p className="eyebrow">Gestion d'accès</p>
-        <h1>Gestion d'accès à un bâtiment et réservation de salles</h1>
+        <h1>Plateforme d'accès</h1>
+        <p className="hero-copy">
+          Gestion d'accès à un bâtiment par reconnaissance faciale et réservation de salles
+        </p>
 
         <div className="hero-tabs" aria-label="Navigation principale">
           <button
