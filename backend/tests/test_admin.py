@@ -16,6 +16,7 @@ from app.models.statuts import (
     StatutSalle,
 )
 from app.models.utilisateur import Utilisateur
+from app.routers import admin as admin_router
 from app.routers.admin import (
     SalleCreate,
     SalleUpdate,
@@ -84,7 +85,10 @@ def test_list_pending_users_returns_only_inactive_standard_users(db_session):
     assert response[0]["donnees_faciales_enregistrees"] is False
 
 
-def test_validate_user_accepts_pending_user(db_session):
+def test_validate_user_accepts_pending_user(db_session, monkeypatch):
+    monkeypatch.setattr(admin_router, "SMTP_ENABLED", False)
+    monkeypatch.setattr(admin_router, "send_email", lambda *args: False)
+
     user = Utilisateur(
         prenom="Josiane",
         nom="Mutwarekazi",
@@ -125,7 +129,10 @@ def test_validate_user_accepts_pending_user(db_session):
     assert demande.date_traitement is not None
 
 
-def test_validate_user_refuses_pending_user(db_session):
+def test_validate_user_refuses_pending_user(db_session, monkeypatch):
+    monkeypatch.setattr(admin_router, "SMTP_ENABLED", False)
+    monkeypatch.setattr(admin_router, "send_email", lambda *args: False)
+
     user = Utilisateur(
         prenom="Josiane",
         nom="Mutwarekazi",
@@ -398,6 +405,8 @@ def test_admin_can_create_update_and_deactivate_salle(db_session):
         payload=SalleCreate(
             nom="Salle A",
             description="Bloc administratif",
+            localisation="Batiment A - local 105",
+            equipements="Projecteur, ordinateur",
             capacite=20,
             active=True
         ),
@@ -406,6 +415,9 @@ def test_admin_can_create_update_and_deactivate_salle(db_session):
     )
 
     assert created["nom"] == "Salle A"
+    assert created["description"] == "Bloc administratif"
+    assert created["localisation"] == "Batiment A - local 105"
+    assert created["equipements"] == "Projecteur, ordinateur"
     assert created["capacite"] == 20
     assert created["active"] is True
     assert created["statut_salle"] == StatutSalle.ACTIVE.value
@@ -415,6 +427,8 @@ def test_admin_can_create_update_and_deactivate_salle(db_session):
         salle_id=salle_id,
         payload=SalleUpdate(
             description="Bloc principal",
+            localisation="Batiment B - local 210",
+            equipements="Audiovisuel, tableau blanc",
             capacite=24,
             active=False
         ),
@@ -423,6 +437,8 @@ def test_admin_can_create_update_and_deactivate_salle(db_session):
     )
 
     assert updated["description"] == "Bloc principal"
+    assert updated["localisation"] == "Batiment B - local 210"
+    assert updated["equipements"] == "Audiovisuel, tableau blanc"
     assert updated["capacite"] == 24
     assert updated["active"] is False
     assert updated["statut_salle"] == StatutSalle.INACTIVE.value

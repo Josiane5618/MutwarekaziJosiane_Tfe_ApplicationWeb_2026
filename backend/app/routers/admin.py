@@ -27,6 +27,8 @@ router = APIRouter(
 class SalleCreate(BaseModel):
     nom: str = Field(..., min_length=1)
     description: Optional[str] = None
+    localisation: Optional[str] = None
+    equipements: Optional[str] = None
     capacite: Optional[int] = Field(default=None, ge=1)
     active: bool = True
 
@@ -34,6 +36,8 @@ class SalleCreate(BaseModel):
 class SalleUpdate(BaseModel):
     nom: Optional[str] = Field(default=None, min_length=1)
     description: Optional[str] = None
+    localisation: Optional[str] = None
+    equipements: Optional[str] = None
     capacite: Optional[int] = Field(default=None, ge=1)
     active: Optional[bool] = None
 
@@ -63,6 +67,8 @@ def serialize_salle(salle: Salle):
         "id": salle.id,
         "nom": salle.nom,
         "description": salle.description,
+        "localisation": salle.localisation,
+        "equipements": salle.equipements,
         "capacite": salle.capacite,
         "active": salle.active,
         "statut_salle": salle.statut_salle,
@@ -292,6 +298,8 @@ def create_salle(
     salle = Salle(
         nom=nom,
         description=payload.description,
+        localisation=payload.localisation,
+        equipements=payload.equipements,
         capacite=payload.capacite,
         active=payload.active,
     )
@@ -330,6 +338,12 @@ def update_salle(
 
     if payload.description is not None:
         salle.description = payload.description
+
+    if payload.localisation is not None:
+        salle.localisation = payload.localisation
+
+    if payload.equipements is not None:
+        salle.equipements = payload.equipements
 
     if payload.capacite is not None:
         salle.capacite = payload.capacite

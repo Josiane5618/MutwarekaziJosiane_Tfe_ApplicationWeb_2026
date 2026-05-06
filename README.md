@@ -262,6 +262,15 @@ Les classes bien représentées dans le backend sont :
 - `Notification`
 - `LogAcces`
 
+Pour `Salle`, le code contient maintenant :
+
+- `nom`, pour le nom court de la salle
+- `description`, pour expliquer l'usage général de la salle
+- `localisation`, pour indiquer le bâtiment, l'étage ou le numéro de local
+- `equipements`, pour indiquer le matériel spécial disponible
+- `capacite`, pour le nombre de personnes
+- `active`, pour savoir si la salle est disponible dans l'application
+
 Les énumérations du diagramme sont aussi représentées avec :
 
 - `StatutCompte`

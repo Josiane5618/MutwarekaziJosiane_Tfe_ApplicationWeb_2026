@@ -679,7 +679,8 @@ export default function UserDashboard({ token, onLogout }) {
                     </option>
                     {salles.map(salle => (
                       <option key={salle.id} value={salle.id}>
-                        {salle.nom} - capacité {salle.capacite ?? "n/a"}
+                        {salle.nom} - {salle.localisation || "local non renseigné"} - capacité{" "}
+                        {salle.capacite ?? "n/a"}
                       </option>
                     ))}
                   </select>

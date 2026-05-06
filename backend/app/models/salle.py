@@ -9,6 +9,8 @@ class Salle(Base):
     id = Column(Integer, primary_key=True, index=True)
     nom = Column(String, nullable=False, unique=True)
     description = Column(String, nullable=True)
+    localisation = Column(String, nullable=True)
+    equipements = Column(String, nullable=True)
     capacite = Column(Integer, nullable=True)
     active = Column(Boolean, default=True)
 

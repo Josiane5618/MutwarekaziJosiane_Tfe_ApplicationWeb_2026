@@ -17,6 +17,8 @@ import {
 const initialSalleForm = {
   nom: "",
   description: "",
+  localisation: "",
+  equipements: "",
   capacite: "",
   active: true
 };
@@ -388,6 +390,8 @@ export default function AdminReviewPanel({ token, onLogout }) {
     const payload = {
       nom: salleForm.nom.trim(),
       description: salleForm.description.trim() || null,
+      localisation: salleForm.localisation.trim() || null,
+      equipements: salleForm.equipements.trim() || null,
       capacite: salleForm.capacite ? Number(salleForm.capacite) : null,
       active: salleForm.active
     };
@@ -443,6 +447,8 @@ export default function AdminReviewPanel({ token, onLogout }) {
     setSalleForm({
       nom: salle.nom || "",
       description: salle.description || "",
+      localisation: salle.localisation || "",
+      equipements: salle.equipements || "",
       capacite: salle.capacite ? String(salle.capacite) : "",
       active: Boolean(salle.active)
     });
@@ -701,7 +707,29 @@ export default function AdminReviewPanel({ token, onLogout }) {
                     type="text"
                     value={salleForm.description}
                     onChange={handleSalleChange}
-                    placeholder="Etage, usage ou emplacement"
+                    placeholder="Salle adaptée aux réunions et présentations"
+                  />
+                </label>
+
+                <label className="field field-full">
+                  <span>Localisation</span>
+                  <input
+                    name="localisation"
+                    type="text"
+                    value={salleForm.localisation}
+                    onChange={handleSalleChange}
+                    placeholder="Bâtiment A - local 203"
+                  />
+                </label>
+
+                <label className="field field-full">
+                  <span>Équipements</span>
+                  <input
+                    name="equipements"
+                    type="text"
+                    value={salleForm.equipements}
+                    onChange={handleSalleChange}
+                    placeholder="Projecteur, ordinateur, audiovisuel"
                   />
                 </label>
 
@@ -814,6 +842,12 @@ export default function AdminReviewPanel({ token, onLogout }) {
                           <p className="request-email">
                             {salle.description || "Aucune description"} · Capacité{" "}
                             {salle.capacite ?? "n/a"}
+                          </p>
+                          <p className="request-meta">
+                            {salle.localisation || "Localisation non renseignée"}
+                          </p>
+                          <p className="request-meta">
+                            Équipements : {salle.equipements || "non renseignés"}
                           </p>
                         </div>
                         <span
