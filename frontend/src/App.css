@@ -809,22 +809,11 @@
 
 .view-user .register-hero,
 .view-admin .register-hero {
-  justify-content: flex-start;
-}
-
-.view-user .register-panel,
-.view-admin .register-panel {
-  display: flex;
-  align-items: center;
   justify-content: center;
-  padding: 28px;
 }
 
-.view-user .register-panel > .register-form,
-.view-admin .register-panel > .register-form,
-.view-user .register-panel > .session-panel,
-.view-admin .register-panel > .session-panel {
-  width: min(100%, 520px);
+.view-user .register-panel {
+  padding: 18px;
 }
 
 .view-user .user-dashboard {
