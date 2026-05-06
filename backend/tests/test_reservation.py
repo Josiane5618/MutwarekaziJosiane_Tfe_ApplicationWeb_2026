@@ -8,6 +8,7 @@ from app.models.reservation import Reservation
 from app.models.salle import Salle
 from app.models.statuts import StatutReservation
 from app.models.utilisateur import Utilisateur
+from app.routers import reservation as reservation_router
 from app.routers.reservation import (
     annuler_reservation,
     creer_reservation,
@@ -76,7 +77,10 @@ def create_reservation(
     return reservation
 
 
-def test_user_can_cancel_own_reservation(db_session):
+def test_user_can_cancel_own_reservation(db_session, monkeypatch):
+    monkeypatch.setattr(reservation_router, "SMTP_ENABLED", False)
+    monkeypatch.setattr(reservation_router, "send_email", lambda *args: False)
+
     user = create_user(db_session, "owner@example.com")
     reservation = create_reservation(db_session, user.id)
 
@@ -98,6 +102,8 @@ def test_user_can_cancel_own_reservation(db_session):
     )
 
     assert response["message"] == "Réservation annulée avec succès"
+    assert response["email_envoye"] is False
+    assert response["email_mode"] == "console"
     assert remaining_reservation is not None
     assert remaining_reservation.statut == StatutReservation.ANNULEE.value
     assert notification is not None
@@ -126,7 +132,13 @@ def test_user_reservations_include_confirmed_status(db_session):
     ]
 
 
-def test_create_reservation_ignores_cancelled_reservation_conflict(db_session):
+def test_create_reservation_ignores_cancelled_reservation_conflict(
+    db_session,
+    monkeypatch,
+):
+    monkeypatch.setattr(reservation_router, "SMTP_ENABLED", False)
+    monkeypatch.setattr(reservation_router, "send_email", lambda *args: False)
+
     user = create_user(db_session, "owner@example.com")
     salle = create_salle(db_session)
     create_reservation(
@@ -150,6 +162,8 @@ def test_create_reservation_ignores_cancelled_reservation_conflict(db_session):
     reservations = db_session.query(Reservation).all()
 
     assert response["message"] == "Réservation créée avec succès"
+    assert response["email_envoye"] is False
+    assert response["email_mode"] == "console"
     assert len(reservations) == 2
     assert reservations[-1].statut == StatutReservation.CONFIRMEE.value
 
@@ -195,7 +209,10 @@ def test_user_cannot_cancel_already_cancelled_reservation(db_session):
     assert exc_info.value.detail == "Cette réservation est déjà annulée"
 
 
-def test_user_can_update_own_reservation(db_session):
+def test_user_can_update_own_reservation(db_session, monkeypatch):
+    monkeypatch.setattr(reservation_router, "SMTP_ENABLED", False)
+    monkeypatch.setattr(reservation_router, "send_email", lambda *args: False)
+
     user = create_user(db_session, "owner@example.com")
     salle = create_salle(db_session, "Salle initiale")
     new_salle = create_salle(db_session, "Salle modifiée")
@@ -219,6 +236,8 @@ def test_user_can_update_own_reservation(db_session):
     )
 
     assert response["message"] == "Réservation modifiée avec succès"
+    assert response["email_envoye"] is False
+    assert response["email_mode"] == "console"
     assert reservation.salle_id == new_salle.id
     assert reservation.date == future_date(days=31)
     assert reservation.heure_debut == time(11, 0)

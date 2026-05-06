@@ -66,6 +66,22 @@ function formatDateTimeFr(value) {
   });
 }
 
+function formatEmailResult(payload) {
+  if (payload?.email_mode === "smtp" && payload?.email_envoye) {
+    return "Email envoyé vers Mailpit ou le serveur SMTP configuré.";
+  }
+
+  if (payload?.email_mode === "smtp" && !payload?.email_envoye) {
+    return "Email non envoyé : vérifiez Mailpit ou la configuration SMTP.";
+  }
+
+  if (payload?.email_mode === "console") {
+    return "Email affiché dans le terminal backend, car SMTP n'est pas activé.";
+  }
+
+  return "";
+}
+
 function getTodayInputValue() {
   const today = new Date();
   const year = today.getFullYear();
@@ -277,7 +293,8 @@ export default function UserDashboard({ token, onLogout }) {
 
       setFeedback({
         type: "success",
-        message: payload?.message || "Réservation annulée avec succès."
+        message:
+          `${payload?.message || "Réservation annulée avec succès."} ${formatEmailResult(payload)}`.trim()
       });
 
       if (editingReservationId === reservationId) {
@@ -382,7 +399,8 @@ export default function UserDashboard({ token, onLogout }) {
 
       setFeedback({
         type: "success",
-        message: payload?.message || "Réservation modifiée avec succès."
+        message:
+          `${payload?.message || "Réservation modifiée avec succès."} ${formatEmailResult(payload)}`.trim()
       });
 
       stopReservationEdit();
@@ -428,7 +446,8 @@ export default function UserDashboard({ token, onLogout }) {
 
       setFeedback({
         type: "success",
-        message: payload?.message || "Réservation créée avec succès."
+        message:
+          `${payload?.message || "Réservation créée avec succès."} ${formatEmailResult(payload)}`.trim()
       });
 
       setReservationForm(currentForm => ({

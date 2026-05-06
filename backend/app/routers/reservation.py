@@ -7,7 +7,10 @@ from app.models.salle import Salle
 from app.models.reservation import Reservation
 from app.models.notification import Notification
 from app.models.statuts import StatutReservation
+from app.models.utilisateur import Utilisateur
 from app.security.dependencies import get_current_user
+from app.config import SMTP_ENABLED
+from app.utils.email_service import send_email
 
 router = APIRouter(
     prefix="/reservations",
@@ -24,6 +27,50 @@ def serialize_reservation(reservation: Reservation):
         "heure_debut": reservation.heure_debut.isoformat(),
         "heure_fin": reservation.heure_fin.isoformat(),
         "statut": reservation.statut,
+    }
+
+
+def format_email_time(value: time) -> str:
+    return value.strftime("%H h %M")
+
+
+def format_reservation_email(
+    salle: Salle,
+    date_reservation: date,
+    heure_debut: time,
+    heure_fin: time,
+) -> str:
+    return (
+        f"Salle : {salle.nom}\n"
+        f"Date : {date_reservation.strftime('%d/%m/%Y')}\n"
+        f"Horaire : {format_email_time(heure_debut)} à "
+        f"{format_email_time(heure_fin)}"
+    )
+
+
+def send_reservation_email(
+    db: Session,
+    user_id: int,
+    subject: str,
+    content: str,
+):
+    utilisateur = (
+        db.query(Utilisateur)
+        .filter(Utilisateur.id == user_id)
+        .first()
+    )
+
+    if not utilisateur:
+        return {
+            "email_envoye": False,
+            "email_mode": "smtp" if SMTP_ENABLED else "console",
+        }
+
+    email_sent = send_email(utilisateur.email, subject, content)
+
+    return {
+        "email_envoye": email_sent,
+        "email_mode": "smtp" if SMTP_ENABLED else "console",
     }
 
 
@@ -93,7 +140,7 @@ def creer_reservation(
     db: Session = Depends(get_db),
     user=Depends(get_current_user)
 ):
-    validate_reservation_rules(
+    salle = validate_reservation_rules(
         salle_id=salle_id,
         date_reservation=date_reservation,
         heure_debut=heure_debut,
@@ -130,7 +177,6 @@ def creer_reservation(
 
     db.add(reservation)
 
-    # ✅ Notification utilisateur
     notification = Notification(
         utilisateur_id=user["user_id"],
         message="Votre réservation de salle a été créée avec succès."
@@ -139,7 +185,20 @@ def creer_reservation(
 
     db.commit()
 
-    return {"message": "Réservation créée avec succès"}
+    email_result = send_reservation_email(
+        db=db,
+        user_id=user["user_id"],
+        subject="Confirmation de réservation",
+        content=(
+            "Votre réservation de salle a été créée avec succès.\n\n"
+            f"{format_reservation_email(salle, date_reservation, heure_debut, heure_fin)}"
+        ),
+    )
+
+    return {
+        "message": "Réservation créée avec succès",
+        **email_result,
+    }
 
 
 @router.put("/{reservation_id}")
@@ -173,7 +232,7 @@ def modifier_reservation(
             detail="Une réservation annulée ne peut pas être modifiée"
         )
 
-    validate_reservation_rules(
+    salle = validate_reservation_rules(
         salle_id=salle_id,
         date_reservation=date_reservation,
         heure_debut=heure_debut,
@@ -213,7 +272,20 @@ def modifier_reservation(
 
     db.commit()
 
-    return {"message": "Réservation modifiée avec succès"}
+    email_result = send_reservation_email(
+        db=db,
+        user_id=user["user_id"],
+        subject="Modification de réservation",
+        content=(
+            "Votre réservation de salle a été modifiée avec succès.\n\n"
+            f"{format_reservation_email(salle, date_reservation, heure_debut, heure_fin)}"
+        ),
+    )
+
+    return {
+        "message": "Réservation modifiée avec succès",
+        **email_result,
+    }
 
 
 @router.delete("/{reservation_id}")
@@ -243,6 +315,12 @@ def annuler_reservation(
             detail="Cette réservation est déjà annulée"
         )
 
+    reservation_details = format_reservation_email(
+        reservation.salle,
+        reservation.date,
+        reservation.heure_debut,
+        reservation.heure_fin,
+    )
     reservation.statut = StatutReservation.ANNULEE.value
 
     notification = Notification(
@@ -253,4 +331,17 @@ def annuler_reservation(
 
     db.commit()
 
-    return {"message": "Réservation annulée avec succès"}
+    email_result = send_reservation_email(
+        db=db,
+        user_id=user["user_id"],
+        subject="Annulation de réservation",
+        content=(
+            "Votre réservation de salle a été annulée.\n\n"
+            f"{reservation_details}"
+        ),
+    )
+
+    return {
+        "message": "Réservation annulée avec succès",
+        **email_result,
+    }
