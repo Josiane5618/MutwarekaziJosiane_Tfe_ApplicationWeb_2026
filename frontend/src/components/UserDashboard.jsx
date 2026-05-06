@@ -98,6 +98,40 @@ function formatEmailResult(payload) {
   return "";
 }
 
+function normalizeTimeForComparison(value) {
+  return value?.slice(0, 5) || "";
+}
+
+function findConfirmedReservationConflict({
+  reservations,
+  reservationIdToIgnore = null,
+  salleId,
+  dateReservation,
+  heureDebut,
+  heureFin
+}) {
+  const start = normalizeTimeForComparison(heureDebut);
+  const end = normalizeTimeForComparison(heureFin);
+
+  if (!salleId || !dateReservation || !start || !end) {
+    return null;
+  }
+
+  return reservations.find(reservation => {
+    const existingStart = normalizeTimeForComparison(reservation.heure_debut);
+    const existingEnd = normalizeTimeForComparison(reservation.heure_fin);
+
+    return (
+      reservation.id !== reservationIdToIgnore &&
+      reservation.statut !== "ANNULEE" &&
+      String(reservation.salle_id) === String(salleId) &&
+      reservation.date === dateReservation &&
+      existingStart < end &&
+      existingEnd > start
+    );
+  });
+}
+
 function getTodayInputValue() {
   const today = new Date();
   const year = today.getFullYear();
@@ -524,6 +558,24 @@ export default function UserDashboard({ token, onLogout }) {
   const handleUpdateReservation = async event => {
     event.preventDefault();
     setFeedback({ type: "", message: "" });
+
+    const conflict = findConfirmedReservationConflict({
+      reservations,
+      reservationIdToIgnore: editingReservationId,
+      salleId: editReservationForm.salleId,
+      dateReservation: editReservationForm.dateReservation,
+      heureDebut: editReservationForm.heureDebut,
+      heureFin: editReservationForm.heureFin
+    });
+
+    if (conflict) {
+      setFeedback({
+        type: "error",
+        message: `Ce créneau chevauche déjà votre réservation confirmée du ${formatReservationWindow(conflict)}.`
+      });
+      return;
+    }
+
     setUpdatingReservationId(editingReservationId);
 
     try {
@@ -571,6 +623,23 @@ export default function UserDashboard({ token, onLogout }) {
   const handleReservationSubmit = async event => {
     event.preventDefault();
     setFeedback({ type: "", message: "" });
+
+    const conflict = findConfirmedReservationConflict({
+      reservations,
+      salleId: reservationForm.salleId,
+      dateReservation: reservationForm.dateReservation,
+      heureDebut: reservationForm.heureDebut,
+      heureFin: reservationForm.heureFin
+    });
+
+    if (conflict) {
+      setFeedback({
+        type: "error",
+        message: `Ce créneau chevauche déjà votre réservation confirmée du ${formatReservationWindow(conflict)}.`
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {

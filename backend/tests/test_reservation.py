@@ -168,6 +168,31 @@ def test_create_reservation_ignores_cancelled_reservation_conflict(
     assert reservations[-1].statut == StatutReservation.CONFIRMEE.value
 
 
+def test_create_reservation_rejects_confirmed_reservation_conflict(db_session):
+    user = create_user(db_session, "owner@example.com")
+    salle = create_salle(db_session)
+    create_reservation(
+        db_session,
+        user.id,
+        salle=salle,
+        start=time(9, 0),
+        end=time(10, 0),
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        creer_reservation(
+            salle_id=salle.id,
+            date_reservation=future_date(),
+            heure_debut=time(9, 30),
+            heure_fin=time(10, 30),
+            db=db_session,
+            user={"user_id": user.id, "role": "utilisateur"}
+        )
+
+    assert exc_info.value.status_code == 409
+    assert exc_info.value.detail == "Créneau déjà réservé pour cette salle"
+
+
 def test_user_cannot_cancel_another_users_reservation(db_session):
     owner = create_user(db_session, "owner@example.com")
     other_user = create_user(db_session, "other@example.com")
