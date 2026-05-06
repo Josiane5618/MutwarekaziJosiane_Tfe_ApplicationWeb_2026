@@ -135,6 +135,7 @@ export default function AdminReviewPanel({ token, onLogout }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [updatingUserId, setUpdatingUserId] = useState(null);
   const [editingSalleId, setEditingSalleId] = useState(null);
+  const [activeTab, setActiveTab] = useState("demandes");
   const [salleForm, setSalleForm] = useState(initialSalleForm);
   const [feedback, setFeedback] = useState({
     type: "",
@@ -604,6 +605,45 @@ export default function AdminReviewPanel({ token, onLogout }) {
         </div>
       ) : (
         <>
+          <nav className="dashboard-tabs" aria-label="Navigation administrateur">
+            <button
+              className={activeTab === "demandes" ? "dashboard-tab is-active" : "dashboard-tab"}
+              type="button"
+              onClick={() => setActiveTab("demandes")}
+            >
+              Demandes
+            </button>
+            <button
+              className={activeTab === "salles" ? "dashboard-tab is-active" : "dashboard-tab"}
+              type="button"
+              onClick={() => setActiveTab("salles")}
+            >
+              Salles
+            </button>
+            <button
+              className={activeTab === "utilisateurs" ? "dashboard-tab is-active" : "dashboard-tab"}
+              type="button"
+              onClick={() => setActiveTab("utilisateurs")}
+            >
+              Utilisateurs
+            </button>
+            <button
+              className={activeTab === "reservations" ? "dashboard-tab is-active" : "dashboard-tab"}
+              type="button"
+              onClick={() => setActiveTab("reservations")}
+            >
+              Réservations
+            </button>
+            <button
+              className={activeTab === "logs" ? "dashboard-tab is-active" : "dashboard-tab"}
+              type="button"
+              onClick={() => setActiveTab("logs")}
+            >
+              Logs d'accès
+            </button>
+          </nav>
+
+          {activeTab === "demandes" ? (
           <section className="admin-layout">
             <article className="request-card">
               <div className="panel-header">
@@ -695,7 +735,11 @@ export default function AdminReviewPanel({ token, onLogout }) {
                 </div>
               )}
             </article>
+          </section>
+          ) : null}
 
+          {activeTab === "salles" ? (
+          <section className="admin-layout">
             <article className="request-card">
               <div className="panel-header">
                 <p className="section-label">Salles</p>
@@ -792,50 +836,6 @@ export default function AdminReviewPanel({ token, onLogout }) {
                 </div>
               </form>
             </article>
-          </section>
-
-          <section className="dashboard-grid admin-secondary-grid">
-            <article className="request-card">
-              <div className="panel-header">
-                <p className="section-label">Demandes</p>
-                <h2>Historique des inscriptions</h2>
-              </div>
-
-              {registrationRequests.length === 0 ? (
-                <div className="empty-state">
-                  <p>Aucune demande d'inscription enregistrée.</p>
-                </div>
-              ) : (
-                <div className="stack-list">
-                  {registrationRequests.map(request => (
-                    <div className="stack-item" key={request.id}>
-                      <div className="request-card-header">
-                        <div>
-                          <p className="request-name">
-                            {request.utilisateur.prenom} {request.utilisateur.nom}
-                          </p>
-                          <p className="request-email">
-                            {request.utilisateur.email}
-                          </p>
-                          <p className="request-meta">
-                            Envoyée le {formatDateTime(request.date_soumission)}
-                          </p>
-                          <p className="request-meta">
-                            Traitée le{" "}
-                            {request.date_traitement
-                              ? formatDateTime(request.date_traitement)
-                              : "non traitée"}
-                          </p>
-                        </div>
-                        <span className={getRequestBadgeClass(request.statut)}>
-                          {formatRequestStatus(request.statut)}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </article>
 
             <article className="request-card">
               <div className="panel-header">
@@ -898,7 +898,57 @@ export default function AdminReviewPanel({ token, onLogout }) {
                 </div>
               )}
             </article>
+          </section>
+          ) : null}
 
+          {activeTab === "demandes" ? (
+          <section className="dashboard-grid admin-secondary-grid">
+            <article className="request-card">
+              <div className="panel-header">
+                <p className="section-label">Demandes</p>
+                <h2>Historique des inscriptions</h2>
+              </div>
+
+              {registrationRequests.length === 0 ? (
+                <div className="empty-state">
+                  <p>Aucune demande d'inscription enregistrée.</p>
+                </div>
+              ) : (
+                <div className="stack-list">
+                  {registrationRequests.map(request => (
+                    <div className="stack-item" key={request.id}>
+                      <div className="request-card-header">
+                        <div>
+                          <p className="request-name">
+                            {request.utilisateur.prenom} {request.utilisateur.nom}
+                          </p>
+                          <p className="request-email">
+                            {request.utilisateur.email}
+                          </p>
+                          <p className="request-meta">
+                            Envoyée le {formatDateTime(request.date_soumission)}
+                          </p>
+                          <p className="request-meta">
+                            Traitée le{" "}
+                            {request.date_traitement
+                              ? formatDateTime(request.date_traitement)
+                              : "non traitée"}
+                          </p>
+                        </div>
+                        <span className={getRequestBadgeClass(request.statut)}>
+                          {formatRequestStatus(request.statut)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </article>
+          </section>
+          ) : null}
+
+          {activeTab === "utilisateurs" ? (
+          <section className="dashboard-grid admin-secondary-grid">
             <article className="request-card">
               <div className="panel-header">
                 <p className="section-label">Utilisateurs</p>
@@ -997,7 +1047,9 @@ export default function AdminReviewPanel({ token, onLogout }) {
               )}
             </article>
           </section>
+          ) : null}
 
+          {activeTab === "reservations" ? (
           <section className="dashboard-grid admin-secondary-grid">
             <article className="request-card">
               <div className="panel-header">
@@ -1039,7 +1091,11 @@ export default function AdminReviewPanel({ token, onLogout }) {
                 </div>
               )}
             </article>
+          </section>
+          ) : null}
 
+          {activeTab === "logs" ? (
+          <section className="dashboard-grid admin-secondary-grid">
             <article className="request-card">
               <div className="panel-header">
                 <p className="section-label">Logs d'accès</p>
@@ -1083,6 +1139,7 @@ export default function AdminReviewPanel({ token, onLogout }) {
               )}
             </article>
           </section>
+          ) : null}
         </>
       )}
     </div>

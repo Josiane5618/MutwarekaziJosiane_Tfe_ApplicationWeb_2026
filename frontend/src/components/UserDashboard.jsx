@@ -87,6 +87,7 @@ export default function UserDashboard({ token, onLogout }) {
   const [editingReservationId, setEditingReservationId] = useState(null);
   const [updatingReservationId, setUpdatingReservationId] = useState(null);
   const [isAccessSubmitting, setIsAccessSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState("reservations");
   const [accessFaceImage, setAccessFaceImage] = useState(null);
   const [accessResult, setAccessResult] = useState(null);
   const [accessNotice, setAccessNotice] = useState({
@@ -582,6 +583,38 @@ export default function UserDashboard({ token, onLogout }) {
             </article>
           </section>
 
+          <nav className="dashboard-tabs" aria-label="Navigation utilisateur">
+            <button
+              className={activeTab === "reservations" ? "dashboard-tab is-active" : "dashboard-tab"}
+              type="button"
+              onClick={() => setActiveTab("reservations")}
+            >
+              Réservations
+            </button>
+            <button
+              className={activeTab === "access" ? "dashboard-tab is-active" : "dashboard-tab"}
+              type="button"
+              onClick={() => setActiveTab("access")}
+            >
+              Accès bâtiment
+            </button>
+            <button
+              className={activeTab === "notifications" ? "dashboard-tab is-active" : "dashboard-tab"}
+              type="button"
+              onClick={() => setActiveTab("notifications")}
+            >
+              Notifications
+            </button>
+            <button
+              className={activeTab === "profile" ? "dashboard-tab is-active" : "dashboard-tab"}
+              type="button"
+              onClick={() => setActiveTab("profile")}
+            >
+              Profil
+            </button>
+          </nav>
+
+          {activeTab === "profile" ? (
           <article className="request-card">
             <div className="panel-header">
               <p className="section-label">Profil</p>
@@ -640,7 +673,9 @@ export default function UserDashboard({ token, onLogout }) {
               </button>
             </form>
           </article>
+          ) : null}
 
+          {activeTab === "access" ? (
           <article className="request-card access-card">
             <div className="panel-header">
               <p className="section-label">Accès bâtiment</p>
@@ -699,7 +734,9 @@ export default function UserDashboard({ token, onLogout }) {
               </button>
             </form>
           </article>
+          ) : null}
 
+          {activeTab === "reservations" ? (
           <section className="reservation-layout">
             <article className="request-card">
               <div className="panel-header">
@@ -911,7 +948,9 @@ export default function UserDashboard({ token, onLogout }) {
               )}
             </article>
           </section>
+          ) : null}
 
+          {activeTab === "notifications" ? (
           <article className="request-card user-notifications-card">
             <div className="panel-header">
               <p className="section-label">Notifications</p>
@@ -935,6 +974,7 @@ export default function UserDashboard({ token, onLogout }) {
               </div>
             )}
           </article>
+          ) : null}
         </>
       )}
     </div>
