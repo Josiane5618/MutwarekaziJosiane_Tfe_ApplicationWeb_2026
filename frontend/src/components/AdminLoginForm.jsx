@@ -52,19 +52,13 @@ export default function AdminLoginForm({ onLogin }) {
   };
 
   return (
-    <form className="register-form" onSubmit={handleSubmit} autoComplete="on">
+    <form className="register-form" onSubmit={handleSubmit} autoComplete="off">
       <div className="panel-header">
         <p className="section-label">Administration</p>
         <h2>Connexion administrateur</h2>
         <p className="section-copy">
           Connectez-vous pour gérer les demandes, les salles, les utilisateurs, les réservations et les accès.
         </p>
-      </div>
-
-      <div className="credential-card">
-        <p className="credential-label">Compte admin local</p>
-        <p className="credential-value">E-mail : admin@gestion-acces.dev</p>
-        <p className="credential-value">Mot de passe: Admin123!</p>
       </div>
 
       {feedback.message ? (
@@ -81,8 +75,8 @@ export default function AdminLoginForm({ onLogin }) {
             type="email"
             value={form.email}
             onChange={handleChange}
-            placeholder="admin@gestion-acces.dev"
-            autoComplete="username"
+            placeholder="email administrateur"
+            autoComplete="off"
             required
           />
         </label>
@@ -94,8 +88,8 @@ export default function AdminLoginForm({ onLogin }) {
             type="password"
             value={form.password}
             onChange={handleChange}
-            placeholder="Entrez le mot de passe admin"
-            autoComplete="current-password"
+            placeholder="mot de passe administrateur"
+            autoComplete="new-password"
             required
           />
         </label>

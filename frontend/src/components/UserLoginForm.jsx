@@ -49,7 +49,7 @@ export default function UserLoginForm({ onLogin }) {
   };
 
   return (
-    <form className="register-form" onSubmit={handleSubmit} autoComplete="on">
+    <form className="register-form" onSubmit={handleSubmit} autoComplete="off">
       <div className="panel-header">
         <p className="section-label">Utilisateur</p>
         <h2>Connexion utilisateur</h2>
@@ -74,7 +74,7 @@ export default function UserLoginForm({ onLogin }) {
             value={form.email}
             onChange={handleChange}
             placeholder="vous@example.com"
-            autoComplete="username"
+            autoComplete="off"
             required
           />
         </label>
@@ -87,7 +87,7 @@ export default function UserLoginForm({ onLogin }) {
             value={form.password}
             onChange={handleChange}
             placeholder="Votre mot de passe"
-            autoComplete="current-password"
+            autoComplete="new-password"
             required
           />
         </label>
