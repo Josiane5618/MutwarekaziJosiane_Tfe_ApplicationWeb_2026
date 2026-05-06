@@ -139,7 +139,11 @@ function getYearOptions() {
 }
 
 function FrenchDateField({ name, value, min, onChange }) {
-  const selected = getDatePartsFromIso(value);
+  const [selected, setSelected] = useState(getDatePartsFromIso(value));
+
+  useEffect(() => {
+    setSelected(getDatePartsFromIso(value));
+  }, [value]);
 
   const updateDatePart = (part, partValue) => {
     const nextParts = {
@@ -159,14 +163,18 @@ function FrenchDateField({ name, value, min, onChange }) {
       }
     }
 
+    setSelected(nextParts);
+
     const nextDate = buildIsoDate(nextParts);
 
-    onChange({
-      target: {
-        name,
-        value: nextDate
-      }
-    });
+    if (nextDate || value) {
+      onChange({
+        target: {
+          name,
+          value: nextDate
+        }
+      });
+    }
   };
 
   const dayCount =
