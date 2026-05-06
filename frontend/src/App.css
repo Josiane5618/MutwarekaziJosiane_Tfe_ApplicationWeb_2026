@@ -105,31 +105,14 @@
 }
 
 .hero-step {
-  display: grid;
-  grid-template-columns: 44px 1fr;
-  gap: 12px;
-  align-items: start;
   padding: 12px 14px;
   background: rgba(255, 255, 255, 0.72);
   border-radius: 20px;
   border: 1px solid rgba(17, 36, 51, 0.08);
 }
 
-.hero-step span {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: linear-gradient(135deg, #0b7a75, #155eef);
-  color: #fff;
-  font-weight: 700;
-  font-size: 0.95rem;
-}
-
 .hero-step p {
   margin: 0;
-  padding-top: 4px;
   font-size: 0.95rem;
   color: #264254;
 }

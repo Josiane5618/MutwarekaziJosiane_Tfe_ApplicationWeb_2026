@@ -28,7 +28,10 @@ function formatDateTime(value) {
     return "Date indisponible";
   }
 
-  return new Date(value).toLocaleString("fr-FR");
+  return new Date(value).toLocaleString("fr-FR", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  });
 }
 
 function formatRequestDate(request) {
@@ -64,7 +67,19 @@ function getRequestBadgeClass(status) {
 }
 
 function formatReservationWindow(reservation) {
-  return `${reservation.date} de ${reservation.heure_debut} à ${reservation.heure_fin}`;
+  const [year, month, day] = reservation.date.split("-").map(Number);
+  const formattedDate = new Date(year, month - 1, day).toLocaleDateString(
+    "fr-FR",
+    {
+      day: "2-digit",
+      month: "long",
+      year: "numeric"
+    }
+  );
+  const formattedStart = reservation.heure_debut.slice(0, 5).replace(":", " h ");
+  const formattedEnd = reservation.heure_fin.slice(0, 5).replace(":", " h ");
+
+  return `${formattedDate} de ${formattedStart} à ${formattedEnd}`;
 }
 
 function formatAccountStatus(status, active) {

@@ -42,15 +42,12 @@ function App() {
 
         <div className="hero-steps" aria-label="Etapes d'inscription">
           <div className="hero-step">
-            <span>1</span>
             <p>Un utilisateur crée sa demande avec photo faciale.</p>
           </div>
           <div className="hero-step">
-            <span>2</span>
             <p>L'administrateur se connecte et gère les demandes, salles, utilisateurs, réservations et accès.</p>
           </div>
           <div className="hero-step">
-            <span>3</span>
             <p>Une fois validé, l'utilisateur réserve une salle et accède au bâtiment par reconnaissance faciale.</p>
           </div>
         </div>

@@ -28,6 +28,44 @@ function formatReservationStatus(status) {
   return status === "ANNULEE" ? "Annulée" : "Confirmée";
 }
 
+function formatDateFr(value) {
+  if (!value) {
+    return "date non renseignée";
+  }
+
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric"
+  });
+}
+
+function formatTimeFr(value) {
+  if (!value) {
+    return "heure non renseignée";
+  }
+
+  return value.slice(0, 5).replace(":", " h ");
+}
+
+function formatReservationWindow(reservation) {
+  return `${formatDateFr(reservation.date)} de ${formatTimeFr(
+    reservation.heure_debut
+  )} à ${formatTimeFr(reservation.heure_fin)}`;
+}
+
+function formatDateTimeFr(value) {
+  if (!value) {
+    return "date non renseignée";
+  }
+
+  return new Date(value).toLocaleString("fr-FR", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  });
+}
+
 function getTodayInputValue() {
   const today = new Date();
   const year = today.getFullYear();
@@ -241,6 +279,10 @@ export default function UserDashboard({ token, onLogout }) {
         message: payload?.message || "Réservation annulée avec succès."
       });
 
+      if (editingReservationId === reservationId) {
+        stopReservationEdit();
+      }
+
       await loadDashboard({ silent: true });
     } catch {
       setFeedback({
@@ -341,6 +383,7 @@ export default function UserDashboard({ token, onLogout }) {
         type: "success",
         message: payload?.message || "Réservation modifiée avec succès."
       });
+
       stopReservationEdit();
       await loadDashboard({ silent: true });
     } catch {
@@ -822,8 +865,7 @@ export default function UserDashboard({ token, onLogout }) {
                                 `Salle #${reservation.salle_id}`}
                             </p>
                             <p className="request-email">
-                              {reservation.date} de {reservation.heure_debut} à{" "}
-                              {reservation.heure_fin}
+                              {formatReservationWindow(reservation)}
                             </p>
                           </div>
 
@@ -886,7 +928,7 @@ export default function UserDashboard({ token, onLogout }) {
                   <div className="stack-item" key={notification.id}>
                     <p className="request-name">{notification.message}</p>
                     <p className="request-email">
-                      {new Date(notification.date_creation).toLocaleString()}
+                      {formatDateTimeFr(notification.date_creation)}
                     </p>
                   </div>
                 ))}
