@@ -40,17 +40,6 @@ function App() {
           </button>
         </div>
 
-        <div className="hero-steps" aria-label="Etapes d'inscription">
-          <div className="hero-step">
-            <p>Un utilisateur crée sa demande avec photo faciale.</p>
-          </div>
-          <div className="hero-step">
-            <p>L'administrateur se connecte et gère les demandes, salles, utilisateurs, réservations et accès.</p>
-          </div>
-          <div className="hero-step">
-            <p>Une fois validé, l'utilisateur réserve une salle et accède au bâtiment par reconnaissance faciale.</p>
-          </div>
-        </div>
       </section>
 
       {view === "register" ? <Register /> : null}

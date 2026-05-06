@@ -98,25 +98,6 @@
   box-shadow: 0 14px 28px rgba(21, 94, 239, 0.16);
 }
 
-.hero-steps {
-  display: grid;
-  gap: 10px;
-  margin-top: 18px;
-}
-
-.hero-step {
-  padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.72);
-  border-radius: 20px;
-  border: 1px solid rgba(17, 36, 51, 0.08);
-}
-
-.hero-step p {
-  margin: 0;
-  font-size: 0.95rem;
-  color: #264254;
-}
-
 .register-form {
   display: grid;
   gap: 18px;
@@ -727,11 +708,6 @@
   padding: 22px;
   text-align: center;
   color: #4a6172;
-}
-
-.view-user .hero-steps,
-.view-admin .hero-steps {
-  display: none;
 }
 
 .view-register .register-panel {
