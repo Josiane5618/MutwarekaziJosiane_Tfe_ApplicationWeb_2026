@@ -103,6 +103,7 @@
 .register-form {
   display: grid;
   gap: 18px;
+  align-content: start;
 }
 
 .panel-header {
@@ -556,6 +557,7 @@
   padding: 16px 18px;
   display: grid;
   gap: 12px;
+  align-content: start;
   min-width: 0;
 }
 
