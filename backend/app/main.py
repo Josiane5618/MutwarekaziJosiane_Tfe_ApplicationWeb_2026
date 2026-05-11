@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app import models
 from app.bootstrap import bootstrap_database
 from app.routers.auth import router as auth_router
 from app.routers.admin import router as admin_router
@@ -17,6 +16,7 @@ app.add_middleware(
     allow_origins=[
         "http://127.0.0.1:5173",
         "http://localhost:5173",
+        "http://localhost:3000",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -40,12 +40,3 @@ app.include_router(access_router)
 app.include_router(face_detection_router)
 app.include_router(reservation_router)
 app.include_router(notification_router)
-from fastapi.middleware.cors import CORSMiddleware
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)

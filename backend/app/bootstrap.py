@@ -8,7 +8,6 @@ from app.config import (
 )
 from app.database import Base, SessionLocal, engine
 from app.models.demande_inscription import DemandeInscription
-from app.models.notification import Notification
 from app.models.salle import Salle
 from app.models.statuts import StatutDemandeInscription, StatutReservation
 from app.models.utilisateur import Utilisateur
