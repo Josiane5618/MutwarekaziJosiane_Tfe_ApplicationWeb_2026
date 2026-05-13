@@ -254,19 +254,32 @@ def update_user(
 
     user.actif = payload.actif
 
+    if payload.actif:
+        message_notification = "Votre compte a été activé par un administrateur."
+        sujet_email = "Compte activé"
+        contenu_email = (
+            "Votre compte a été activé par un administrateur. "
+            "Vous pouvez désormais vous connecter à l'application."
+        )
+    else:
+        message_notification = "Votre compte a été désactivé par un administrateur."
+        sujet_email = "Compte désactivé"
+        contenu_email = (
+            "Votre compte a été désactivé par un administrateur. "
+            "L'accès à l'application est suspendu."
+        )
+
     db.add(
         Notification(
             utilisateur_id=user.id,
-            message=(
-                "Votre compte a été activé par un administrateur."
-                if payload.actif
-                else "Votre compte a été désactivé par un administrateur."
-            )
+            message=message_notification,
         )
     )
 
     db.commit()
     db.refresh(user)
+
+    send_email(user.email, sujet_email, contenu_email)
 
     return serialize_user(user)
 

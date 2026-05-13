@@ -6,8 +6,10 @@ from app.dependencies import get_db
 from app.models.donnee_faciale import DonneeFaciale
 from app.models.log_acces import LogAcces
 from app.models.notification import Notification
+from app.models.utilisateur import Utilisateur
 from app.security.dependencies import get_current_user
 from app.face_recognition.engine import extract_face_encoding
+from app.utils.email_service import send_email
 
 router = APIRouter(
     prefix="/access",
@@ -71,6 +73,29 @@ async def verify_access(
     db.add(notification)
 
     db.commit()
+
+    # Envoi de l'email correspondant
+    utilisateur = (
+        db.query(Utilisateur)
+        .filter(Utilisateur.id == user["user_id"])
+        .first()
+    )
+
+    if utilisateur:
+        if resultat == "ACCES_AUTORISE":
+            sujet = "Accès au bâtiment autorisé"
+            contenu = (
+                "Votre tentative d'accès au bâtiment a été acceptée.\n"
+                f"Score de correspondance : {float(distance):.3f}"
+            )
+        else:
+            sujet = "Accès au bâtiment refusé"
+            contenu = (
+                "Une tentative d'accès au bâtiment a été refusée sur votre compte.\n"
+                f"Score de correspondance : {float(distance):.3f}"
+            )
+
+        send_email(utilisateur.email, sujet, contenu)
 
     return {
         "resultat": resultat,

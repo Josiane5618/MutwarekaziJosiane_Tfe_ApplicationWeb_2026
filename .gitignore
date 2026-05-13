@@ -22,3 +22,8 @@ frontend/dist/
 *.egg-info/
 
 docs/local/
+
+# Mailpit (binaire local pour capturer les emails en developpement)
+mailpit.exe
+mailpit
+
