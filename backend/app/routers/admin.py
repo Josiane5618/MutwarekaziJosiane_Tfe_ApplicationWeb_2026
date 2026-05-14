@@ -43,7 +43,11 @@ class SalleUpdate(BaseModel):
 
 
 class UserUpdate(BaseModel):
-    actif: bool
+    actif: Optional[bool] = None
+    role: Optional[str] = None
+
+
+ROLES_AUTORISES = {"admin", "utilisateur"}
 
 
 def serialize_user(user: Utilisateur):
@@ -55,11 +59,26 @@ def serialize_user(user: Utilisateur):
         "role": user.role,
         "actif": user.actif,
         "statut_compte": user.statut_compte,
+        "date_creation": (
+            user.date_creation.isoformat() if user.date_creation else None
+        ),
         "demande_inscription": serialize_demande_inscription(user),
         "donnees_faciales_enregistrees": bool(
             user.donnees_faciales and user.donnees_faciales.image
         ),
     }
+
+
+def count_other_active_admins(db: Session, user_id: int) -> int:
+    return (
+        db.query(Utilisateur)
+        .filter(
+            Utilisateur.role == "admin",
+            Utilisateur.actif == True,
+            Utilisateur.id != user_id,
+        )
+        .count()
+    )
 
 
 def serialize_salle(salle: Salle):
@@ -246,40 +265,118 @@ def update_user(
     if not user:
         raise HTTPException(status_code=404, detail="Utilisateur introuvable")
 
-    if user.role == "admin" and payload.actif is False:
+    if payload.actif is None and payload.role is None:
         raise HTTPException(
             status_code=400,
-            detail="Impossible de désactiver un administrateur"
+            detail="Aucune modification fournie"
         )
 
-    user.actif = payload.actif
+    notifications: list[tuple[str, str, str]] = []
+    is_self = user.id == admin["user_id"]
 
-    if payload.actif:
-        message_notification = "Votre compte a été activé par un administrateur."
-        sujet_email = "Compte activé"
-        contenu_email = (
-            "Votre compte a été activé par un administrateur. "
-            "Vous pouvez désormais vous connecter à l'application."
-        )
-    else:
-        message_notification = "Votre compte a été désactivé par un administrateur."
-        sujet_email = "Compte désactivé"
-        contenu_email = (
-            "Votre compte a été désactivé par un administrateur. "
-            "L'accès à l'application est suspendu."
-        )
+    if payload.role is not None and payload.role != user.role:
+        if payload.role not in ROLES_AUTORISES:
+            raise HTTPException(
+                status_code=400,
+                detail="Rôle inconnu"
+            )
 
-    db.add(
-        Notification(
-            utilisateur_id=user.id,
-            message=message_notification,
+        if is_self:
+            raise HTTPException(
+                status_code=400,
+                detail="Vous ne pouvez pas modifier votre propre rôle"
+            )
+
+        if user.role == "admin" and payload.role == "utilisateur":
+            if count_other_active_admins(db, user.id) == 0:
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        "Impossible de retirer le dernier administrateur actif"
+                    )
+                )
+
+        if payload.role == "admin" and not user.actif and payload.actif is not True:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Le compte doit être actif pour devenir administrateur"
+                )
+            )
+
+        if payload.role == "admin":
+            message_notification = (
+                "Vous avez été promu administrateur."
+            )
+            sujet_email = "Droits administrateur attribués"
+            contenu_email = (
+                "Un administrateur vous a attribué les droits d'administration. "
+                "Vous pouvez désormais accéder au tableau de bord administrateur."
+            )
+        else:
+            message_notification = (
+                "Vos droits d'administrateur ont été retirés."
+            )
+            sujet_email = "Droits administrateur retirés"
+            contenu_email = (
+                "Un administrateur a retiré vos droits d'administration. "
+                "Votre compte conserve un accès utilisateur standard."
+            )
+
+        notifications.append((message_notification, sujet_email, contenu_email))
+        user.role = payload.role
+
+    if payload.actif is not None and payload.actif != user.actif:
+        if is_self and payload.actif is False:
+            raise HTTPException(
+                status_code=400,
+                detail="Vous ne pouvez pas désactiver votre propre compte"
+            )
+
+        if user.role == "admin" and payload.actif is False:
+            if count_other_active_admins(db, user.id) == 0:
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        "Impossible de désactiver le dernier administrateur actif"
+                    )
+                )
+
+        if payload.actif:
+            message_notification = (
+                "Votre compte a été activé par un administrateur."
+            )
+            sujet_email = "Compte activé"
+            contenu_email = (
+                "Votre compte a été activé par un administrateur. "
+                "Vous pouvez désormais vous connecter à l'application."
+            )
+        else:
+            message_notification = (
+                "Votre compte a été désactivé par un administrateur."
+            )
+            sujet_email = "Compte désactivé"
+            contenu_email = (
+                "Votre compte a été désactivé par un administrateur. "
+                "L'accès à l'application est suspendu."
+            )
+
+        notifications.append((message_notification, sujet_email, contenu_email))
+        user.actif = payload.actif
+
+    for message_notification, _, _ in notifications:
+        db.add(
+            Notification(
+                utilisateur_id=user.id,
+                message=message_notification,
+            )
         )
-    )
 
     db.commit()
     db.refresh(user)
 
-    send_email(user.email, sujet_email, contenu_email)
+    for _, sujet_email, contenu_email in notifications:
+        send_email(user.email, sujet_email, contenu_email)
 
     return serialize_user(user)
 

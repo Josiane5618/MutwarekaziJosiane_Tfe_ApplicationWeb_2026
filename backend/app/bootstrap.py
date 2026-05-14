@@ -84,6 +84,20 @@ def ensure_schema_columns() -> None:
                     text("ALTER TABLE salles ADD COLUMN equipements VARCHAR")
                 )
 
+    if "utilisateurs" in table_names:
+        utilisateur_columns = {
+            column["name"] for column in inspector.get_columns("utilisateurs")
+        }
+
+        if "date_creation" not in utilisateur_columns:
+            with engine.begin() as connection:
+                connection.execute(
+                    text(
+                        "ALTER TABLE utilisateurs "
+                        "ADD COLUMN date_creation TIMESTAMP NOT NULL DEFAULT NOW()"
+                    )
+                )
+
 
 def ensure_missing_registration_requests() -> None:
     db = SessionLocal()

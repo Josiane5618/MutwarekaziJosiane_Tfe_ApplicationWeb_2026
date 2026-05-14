@@ -359,7 +359,7 @@ def test_admin_can_deactivate_standard_user(db_session):
         user_id=user.id,
         payload=UserUpdate(actif=False),
         db=db_session,
-        admin={"role": "admin"}
+        admin={"user_id": 9999, "role": "admin"}
     )
 
     db_session.refresh(user)
@@ -393,11 +393,14 @@ def test_admin_cannot_deactivate_admin_user(db_session):
             user_id=admin_user.id,
             payload=UserUpdate(actif=False),
             db=db_session,
-            admin={"role": "admin"}
+            admin={"user_id": 9999, "role": "admin"}
         )
 
     assert getattr(exc_info.value, "status_code", None) == 400
-    assert getattr(exc_info.value, "detail", None) == "Impossible de désactiver un administrateur"
+    assert (
+        getattr(exc_info.value, "detail", None)
+        == "Impossible de désactiver le dernier administrateur actif"
+    )
 
 
 def test_admin_can_create_update_and_deactivate_salle(db_session):

@@ -399,6 +399,62 @@ export default function AdminReviewPanel({ token, onLogout }) {
     }
   };
 
+  const handleUserRoleToggle = async userToUpdate => {
+    const nextRole = userToUpdate.role === "admin" ? "utilisateur" : "admin";
+    const confirmationMessage =
+      nextRole === "admin"
+        ? `Promouvoir ${userToUpdate.prenom} ${userToUpdate.nom} au rôle d'administrateur ?`
+        : `Retirer les droits d'administrateur à ${userToUpdate.prenom} ${userToUpdate.nom} ?`;
+
+    if (!window.confirm(confirmationMessage)) {
+      return;
+    }
+
+    setFeedback({ type: "", message: "" });
+    setUpdatingUserId(userToUpdate.id);
+
+    try {
+      const response = await updateAdminUser({
+        token,
+        userId: userToUpdate.id,
+        data: {
+          role: nextRole
+        }
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (response.status === 401 || response.status === 403) {
+        handleUnauthorized();
+        return;
+      }
+
+      if (!response.ok) {
+        setFeedback({
+          type: "error",
+          message:
+            payload?.detail || "Le rôle de l'utilisateur n'a pas pu être modifié."
+        });
+        return;
+      }
+
+      setFeedback({
+        type: "success",
+        message:
+          nextRole === "admin"
+            ? "Droits d'administrateur attribués."
+            : "Droits d'administrateur retirés."
+      });
+      await loadDashboard({ silent: true });
+    } catch {
+      setFeedback({
+        type: "error",
+        message: "Impossible de joindre le backend."
+      });
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
   const handleSalleSubmit = async event => {
     event.preventDefault();
     setFeedback({ type: "", message: "" });
@@ -972,6 +1028,11 @@ export default function AdminReviewPanel({ token, onLogout }) {
                           <p className="request-email">
                             {user.email} · Rôle {user.role}
                           </p>
+                          {user.date_creation ? (
+                            <p className="request-meta">
+                              Inscrit le {formatDateTime(user.date_creation)}
+                            </p>
+                          ) : null}
                         </div>
                         <span
                           className={
@@ -1029,7 +1090,6 @@ export default function AdminReviewPanel({ token, onLogout }) {
                           className={user.actif ? "danger-button" : "secondary-button"}
                           type="button"
                           disabled={
-                            user.role === "admin" ||
                             updatingUserId === user.id ||
                             isSubmitting
                           }
@@ -1040,6 +1100,25 @@ export default function AdminReviewPanel({ token, onLogout }) {
                             : user.actif
                               ? "Désactiver"
                               : "Activer"}
+                        </button>
+                        <button
+                          className={user.role === "admin" ? "danger-button" : "secondary-button"}
+                          type="button"
+                          disabled={
+                            updatingUserId === user.id ||
+                            isSubmitting ||
+                            (!user.actif && user.role !== "admin")
+                          }
+                          onClick={() => handleUserRoleToggle(user)}
+                          title={
+                            !user.actif && user.role !== "admin"
+                              ? "Le compte doit être actif pour devenir administrateur"
+                              : ""
+                          }
+                        >
+                          {user.role === "admin"
+                            ? "Retirer droits admin"
+                            : "Promouvoir admin"}
                         </button>
                       </div>
                     </div>

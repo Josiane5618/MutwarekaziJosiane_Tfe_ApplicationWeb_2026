@@ -158,6 +158,11 @@ def get_me(
         "role": current_user.role,
         "actif": current_user.actif,
         "statut_compte": current_user.statut_compte,
+        "date_creation": (
+            current_user.date_creation.isoformat()
+            if current_user.date_creation
+            else None
+        ),
     }
 
 
@@ -212,4 +217,9 @@ def update_me(
         "role": current_user.role,
         "actif": current_user.actif,
         "statut_compte": current_user.statut_compte,
+        "date_creation": (
+            current_user.date_creation.isoformat()
+            if current_user.date_creation
+            else None
+        ),
     }

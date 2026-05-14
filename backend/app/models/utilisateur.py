@@ -1,4 +1,6 @@
-from sqlalchemy import Column, Integer, String, Boolean
+from datetime import datetime
+
+from sqlalchemy import Column, Integer, String, Boolean, DateTime
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -14,6 +16,7 @@ class Utilisateur(Base):
     mot_de_passe_hash = Column(String(255), nullable=False)
     role = Column(String(50), default="utilisateur")
     actif = Column(Boolean, default=True)
+    date_creation = Column(DateTime, nullable=False, default=datetime.utcnow)
     demandes_inscription = relationship(
         "DemandeInscription",
         back_populates="utilisateur",
