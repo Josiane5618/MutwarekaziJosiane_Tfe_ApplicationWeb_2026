@@ -236,8 +236,8 @@ def test_list_registration_requests_returns_all_request_statuses(db_session):
     db_session.add(
         DonneeFaciale(
             utilisateur_id=accepted_user.id,
-            image=b"fake-image",
-            encodage=b"fake-encoding",
+            image_path=b"fake-image",
+            encodage_facial=b"fake-encoding",
         )
     )
     db_session.commit()
@@ -303,8 +303,8 @@ def test_admin_can_view_registered_face_image(db_session):
     db_session.add(
         DonneeFaciale(
             utilisateur_id=user.id,
-            image=b"fake-image",
-            encodage=b"fake-encoding",
+            image_path=b"fake-image",
+            encodage_facial=b"fake-encoding",
         )
     )
     db_session.commit()
@@ -458,8 +458,8 @@ def test_admin_can_create_update_and_deactivate_salle(db_session):
 
 def test_list_salles_admin_returns_active_and_inactive_rooms(db_session):
     db_session.add_all([
-        Salle(nom="Salle inactive", active=False),
-        Salle(nom="Salle active", active=True),
+        Salle(nom="Salle inactive", est_active=False),
+        Salle(nom="Salle active", est_active=True),
     ])
     db_session.commit()
 
@@ -484,7 +484,7 @@ def test_list_reservations_returns_user_and_room_details(db_session):
         nom="Salle Reunion",
         description="Premier etage",
         capacite=12,
-        active=True
+        est_active=True
     )
     db_session.add_all([user, salle])
     db_session.commit()
@@ -492,7 +492,7 @@ def test_list_reservations_returns_user_and_room_details(db_session):
     reservation = Reservation(
         utilisateur_id=user.id,
         salle_id=salle.id,
-        date=date(2026, 4, 29),
+        date_reservation=date(2026, 4, 29),
         heure_debut=time(9, 0),
         heure_fin=time(10, 0)
     )
@@ -522,9 +522,9 @@ def test_list_access_logs_returns_user_details(db_session):
 
     log = LogAcces(
         utilisateur_id=user.id,
-        date_acces=datetime(2026, 4, 29, 14, 30),
+        horodatage=datetime(2026, 4, 29, 14, 30),
         resultat="ACCES_AUTORISE",
-        distance=0.12
+        score_confiance=0.12
     )
     db_session.add(log)
     db_session.commit()

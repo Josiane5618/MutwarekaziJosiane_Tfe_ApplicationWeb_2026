@@ -88,3 +88,8 @@ SMTP_FROM_EMAIL = get_env(
     "noreply@gestion-acces.dev"
 )
 SMTP_USE_TLS = get_bool_env("SMTP_USE_TLS", False)
+
+BIOMETRIC_ENCRYPTION_KEY = get_env(
+    "BIOMETRIC_ENCRYPTION_KEY",
+    "change_me_with_a_long_random_biometric_secret"
+)

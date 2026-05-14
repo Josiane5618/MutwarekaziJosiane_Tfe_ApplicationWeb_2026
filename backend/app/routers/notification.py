@@ -19,6 +19,6 @@ def mes_notifications(
     return (
         db.query(Notification)
         .filter(Notification.utilisateur_id == user["user_id"])
-        .order_by(Notification.date_creation.desc())
+        .order_by(Notification.date_envoi.desc())
         .all()
     )

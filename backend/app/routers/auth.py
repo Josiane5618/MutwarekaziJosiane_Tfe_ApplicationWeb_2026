@@ -4,6 +4,8 @@ from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field
 
+from datetime import datetime
+
 from app.dependencies import get_db
 from app.models.demande_inscription import DemandeInscription
 from app.models.donnee_faciale import DonneeFaciale
@@ -11,6 +13,7 @@ from app.models.statuts import StatutDemandeInscription
 from app.models.utilisateur import Utilisateur
 from app.schemas.user import UserLogin
 from app.face_recognition.engine import extract_face_encoding
+from app.security.biometric_cipher import encrypt_encoding
 from app.security.dependencies import get_current_user
 from app.security.password import hash_password, verify_password
 from app.security.jwt import create_access_token
@@ -72,8 +75,9 @@ async def register_user(
 
     face_data = DonneeFaciale(
         utilisateur_id=new_user.id,
-        image=image_bytes,
-        encodage=encoding.tobytes()
+        image_path=image_bytes,
+        encodage_facial=encrypt_encoding(encoding.tobytes()),
+        est_chiffre=True,
     )
     db.add(face_data)
 
@@ -121,6 +125,9 @@ def login_user(
             status_code=401,
             detail="Identifiants incorrects"
         )
+
+    user.derniere_connexion = datetime.utcnow()
+    db.commit()
 
     token = create_access_token({
         "user_id": user.id,

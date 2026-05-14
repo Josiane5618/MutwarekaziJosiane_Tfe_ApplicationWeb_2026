@@ -11,7 +11,7 @@ from app.models.donnee_faciale import DonneeFaciale
 from app.models.log_acces import LogAcces
 from app.models.reservation import Reservation
 from app.models.salle import Salle
-from app.models.statuts import StatutDemandeInscription
+from app.models.statuts import StatutDemandeInscription, TypeNotification
 from app.models.utilisateur import Utilisateur
 from app.models.notification import Notification
 from app.security.dependencies import get_current_admin
@@ -64,7 +64,7 @@ def serialize_user(user: Utilisateur):
         ),
         "demande_inscription": serialize_demande_inscription(user),
         "donnees_faciales_enregistrees": bool(
-            user.donnees_faciales and user.donnees_faciales.image
+            user.donnees_faciales and user.donnees_faciales.image_path
         ),
     }
 
@@ -89,7 +89,7 @@ def serialize_salle(salle: Salle):
         "localisation": salle.localisation,
         "equipements": salle.equipements,
         "capacite": salle.capacite,
-        "active": salle.active,
+        "active": salle.est_active,
         "statut_salle": salle.statut_salle,
     }
 
@@ -138,7 +138,7 @@ def serialize_registration_request(demande: DemandeInscription):
             "actif": user.actif,
             "statut_compte": user.statut_compte,
             "donnees_faciales_enregistrees": bool(
-                user.donnees_faciales and user.donnees_faciales.image
+                user.donnees_faciales and user.donnees_faciales.image_path
             ),
         },
     }
@@ -147,7 +147,7 @@ def serialize_registration_request(demande: DemandeInscription):
 def serialize_reservation(reservation: Reservation):
     return {
         "id": reservation.id,
-        "date": reservation.date.isoformat(),
+        "date": reservation.date_reservation.isoformat(),
         "heure_debut": reservation.heure_debut.isoformat(),
         "heure_fin": reservation.heure_fin.isoformat(),
         "statut": reservation.statut,
@@ -168,9 +168,9 @@ def serialize_reservation(reservation: Reservation):
 def serialize_access_log(log: LogAcces):
     return {
         "id": log.id,
-        "date_acces": log.date_acces.isoformat(),
+        "date_acces": log.horodatage.isoformat(),
         "resultat": log.resultat,
-        "distance": log.distance,
+        "distance": log.score_confiance,
         "utilisateur": {
             "id": log.utilisateur.id,
             "prenom": log.utilisateur.prenom,
@@ -240,14 +240,14 @@ def get_user_face_image(
         .first()
     )
 
-    if not face_data or not face_data.image:
+    if not face_data or not face_data.image_path:
         raise HTTPException(
             status_code=404,
             detail="Photo faciale introuvable"
         )
 
     return Response(
-        content=face_data.image,
+        content=face_data.image_path,
         media_type="image/jpeg",
         headers={"Cache-Control": "no-store"},
     )
@@ -271,7 +271,7 @@ def update_user(
             detail="Aucune modification fournie"
         )
 
-    notifications: list[tuple[str, str, str]] = []
+    notifications: list[tuple[str, str, str, str]] = []
     is_self = user.id == admin["user_id"]
 
     if payload.role is not None and payload.role != user.role:
@@ -313,6 +313,7 @@ def update_user(
                 "Un administrateur vous a attribué les droits d'administration. "
                 "Vous pouvez désormais accéder au tableau de bord administrateur."
             )
+            type_notification = TypeNotification.PROMOTION_ADMIN.value
         else:
             message_notification = (
                 "Vos droits d'administrateur ont été retirés."
@@ -322,8 +323,11 @@ def update_user(
                 "Un administrateur a retiré vos droits d'administration. "
                 "Votre compte conserve un accès utilisateur standard."
             )
+            type_notification = TypeNotification.RETROGRADATION_ADMIN.value
 
-        notifications.append((message_notification, sujet_email, contenu_email))
+        notifications.append(
+            (message_notification, sujet_email, contenu_email, type_notification)
+        )
         user.role = payload.role
 
     if payload.actif is not None and payload.actif != user.actif:
@@ -351,6 +355,7 @@ def update_user(
                 "Votre compte a été activé par un administrateur. "
                 "Vous pouvez désormais vous connecter à l'application."
             )
+            type_notification = TypeNotification.COMPTE_ACTIVE.value
         else:
             message_notification = (
                 "Votre compte a été désactivé par un administrateur."
@@ -360,22 +365,27 @@ def update_user(
                 "Votre compte a été désactivé par un administrateur. "
                 "L'accès à l'application est suspendu."
             )
+            type_notification = TypeNotification.COMPTE_DESACTIVE.value
 
-        notifications.append((message_notification, sujet_email, contenu_email))
+        notifications.append(
+            (message_notification, sujet_email, contenu_email, type_notification)
+        )
         user.actif = payload.actif
 
-    for message_notification, _, _ in notifications:
+    for message_notification, sujet_email, _, type_notification in notifications:
         db.add(
             Notification(
                 utilisateur_id=user.id,
+                sujet=sujet_email,
                 message=message_notification,
+                type=type_notification,
             )
         )
 
     db.commit()
     db.refresh(user)
 
-    for _, sujet_email, contenu_email in notifications:
+    for _, sujet_email, contenu_email, _ in notifications:
         send_email(user.email, sujet_email, contenu_email)
 
     return serialize_user(user)
@@ -411,7 +421,7 @@ def create_salle(
         localisation=payload.localisation,
         equipements=payload.equipements,
         capacite=payload.capacite,
-        active=payload.active,
+        est_active=payload.active,
     )
     db.add(salle)
     db.commit()
@@ -459,7 +469,7 @@ def update_salle(
         salle.capacite = payload.capacite
 
     if payload.active is not None:
-        salle.active = payload.active
+        salle.est_active = payload.active
 
     db.commit()
     db.refresh(salle)
@@ -478,7 +488,7 @@ def delete_salle(
     if not salle:
         raise HTTPException(status_code=404, detail="Salle introuvable")
 
-    salle.active = False
+    salle.est_active = False
     db.commit()
     db.refresh(salle)
 
@@ -496,7 +506,7 @@ def list_reservations(
     reservations = (
         db.query(Reservation)
         .order_by(
-            Reservation.date.desc(),
+            Reservation.date_reservation.desc(),
             Reservation.heure_debut.desc(),
             Reservation.id.desc(),
         )
@@ -512,7 +522,7 @@ def list_access_logs(
 ):
     logs = (
         db.query(LogAcces)
-        .order_by(LogAcces.date_acces.desc(), LogAcces.id.desc())
+        .order_by(LogAcces.horodatage.desc(), LogAcces.id.desc())
         .all()
     )
     return [serialize_access_log(log) for log in logs]
@@ -552,28 +562,30 @@ def validate_user(
     demande.date_traitement = datetime.utcnow()
 
     if accept:
-        email_envoye = send_email(
-            user.email,
-            "Inscription acceptée",
+        sujet_email = "Inscription acceptée"
+        contenu_email = (
             "Votre compte a été validé. Vous pouvez maintenant vous connecter."
         )
         notification_message = (
             "Votre compte a ete valide par un administrateur."
         )
+        type_notification = TypeNotification.ACCEPTATION_INSCRIPTION.value
     else:
-        email_envoye = send_email(
-            user.email,
-            "Inscription refusée",
-            "Votre demande d'inscription a été refusée."
-        )
+        sujet_email = "Inscription refusée"
+        contenu_email = "Votre demande d'inscription a été refusée."
         notification_message = (
             "Votre demande d'inscription a ete refusee."
         )
+        type_notification = TypeNotification.REFUS_INSCRIPTION.value
+
+    email_envoye = send_email(user.email, sujet_email, contenu_email)
 
     db.add(
         Notification(
             utilisateur_id=user.id,
-            message=notification_message
+            sujet=sujet_email,
+            message=notification_message,
+            type=type_notification,
         )
     )
 

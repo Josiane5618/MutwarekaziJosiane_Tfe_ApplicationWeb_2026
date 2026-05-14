@@ -6,7 +6,7 @@ from app.dependencies import get_db
 from app.models.salle import Salle
 from app.models.reservation import Reservation
 from app.models.notification import Notification
-from app.models.statuts import StatutReservation
+from app.models.statuts import StatutReservation, TypeNotification
 from app.models.utilisateur import Utilisateur
 from app.security.dependencies import get_current_user
 from app.config import SMTP_ENABLED
@@ -23,7 +23,7 @@ def serialize_reservation(reservation: Reservation):
         "id": reservation.id,
         "utilisateur_id": reservation.utilisateur_id,
         "salle_id": reservation.salle_id,
-        "date": reservation.date.isoformat(),
+        "date": reservation.date_reservation.isoformat(),
         "heure_debut": reservation.heure_debut.isoformat(),
         "heure_fin": reservation.heure_fin.isoformat(),
         "statut": reservation.statut,
@@ -101,7 +101,7 @@ def validate_reservation_rules(
             detail="Salle introuvable"
         )
 
-    if not salle.active:
+    if not salle.est_active:
         raise HTTPException(
             status_code=400,
             detail="Cette salle n'est pas disponible"
@@ -115,7 +115,7 @@ def list_salles(
     db: Session = Depends(get_db),
     user=Depends(get_current_user)
 ):
-    return db.query(Salle).filter(Salle.active == True).all()
+    return db.query(Salle).filter(Salle.est_active == True).all()
 
 
 @router.get("/mes-reservations")
@@ -152,7 +152,7 @@ def creer_reservation(
         db.query(Reservation)
         .filter(
             Reservation.salle_id == salle_id,
-            Reservation.date == date_reservation,
+            Reservation.date_reservation == date_reservation,
             Reservation.statut == StatutReservation.CONFIRMEE.value,
             Reservation.heure_debut < heure_fin,
             Reservation.heure_fin > heure_debut
@@ -169,7 +169,7 @@ def creer_reservation(
     reservation = Reservation(
         utilisateur_id=user["user_id"],
         salle_id=salle_id,
-        date=date_reservation,
+        date_reservation=date_reservation,
         heure_debut=heure_debut,
         heure_fin=heure_fin,
         statut=StatutReservation.CONFIRMEE.value,
@@ -179,7 +179,9 @@ def creer_reservation(
 
     notification = Notification(
         utilisateur_id=user["user_id"],
-        message="Votre réservation de salle a été créée avec succès."
+        sujet="Confirmation de réservation",
+        message="Votre réservation de salle a été créée avec succès.",
+        type=TypeNotification.CONFIRMATION_RESERVATION.value,
     )
     db.add(notification)
 
@@ -245,7 +247,7 @@ def modifier_reservation(
         .filter(
             Reservation.id != reservation_id,
             Reservation.salle_id == salle_id,
-            Reservation.date == date_reservation,
+            Reservation.date_reservation == date_reservation,
             Reservation.statut == StatutReservation.CONFIRMEE.value,
             Reservation.heure_debut < heure_fin,
             Reservation.heure_fin > heure_debut
@@ -259,10 +261,12 @@ def modifier_reservation(
             detail="Créneau déjà réservé pour cette salle"
         )
 
+    reservation.modifier_creneau(
+        date=date_reservation,
+        debut=heure_debut,
+        fin=heure_fin,
+    )
     reservation.salle_id = salle_id
-    reservation.date = date_reservation
-    reservation.heure_debut = heure_debut
-    reservation.heure_fin = heure_fin
 
     notification = Notification(
         utilisateur_id=user["user_id"],
@@ -317,11 +321,11 @@ def annuler_reservation(
 
     reservation_details = format_reservation_email(
         reservation.salle,
-        reservation.date,
+        reservation.date_reservation,
         reservation.heure_debut,
         reservation.heure_fin,
     )
-    reservation.statut = StatutReservation.ANNULEE.value
+    reservation.annuler()
 
     notification = Notification(
         utilisateur_id=user["user_id"],

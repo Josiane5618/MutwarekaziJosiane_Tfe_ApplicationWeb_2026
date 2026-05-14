@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from app.config import (
     DEFAULT_ADMIN_EMAIL,
@@ -7,10 +7,14 @@ from app.config import (
     DEFAULT_ADMIN_PRENOM,
 )
 from app.database import Base, SessionLocal, engine
+from app.models.administrateur import Administrateur
 from app.models.demande_inscription import DemandeInscription
+from app.models.donnee_faciale import DonneeFaciale
+from app.models.reservation import Reservation
 from app.models.salle import Salle
 from app.models.statuts import StatutDemandeInscription, StatutReservation
 from app.models.utilisateur import Utilisateur
+from app.security.biometric_cipher import encrypt_encoding
 from app.security.password import hash_password
 from sqlalchemy import inspect, text
 
@@ -46,6 +50,8 @@ def bootstrap_database() -> None:
     ensure_missing_registration_requests()
     ensure_default_admin()
     ensure_default_salles()
+    encrypt_existing_face_encodings()
+    mark_terminated_reservations()
 
 
 def ensure_schema_columns() -> None:
@@ -89,12 +95,107 @@ def ensure_schema_columns() -> None:
             column["name"] for column in inspector.get_columns("utilisateurs")
         }
 
-        if "date_creation" not in utilisateur_columns:
-            with engine.begin() as connection:
+        with engine.begin() as connection:
+            if "date_creation" not in utilisateur_columns:
                 connection.execute(
                     text(
                         "ALTER TABLE utilisateurs "
                         "ADD COLUMN date_creation TIMESTAMP NOT NULL DEFAULT NOW()"
+                    )
+                )
+
+            if "derniere_connexion" not in utilisateur_columns:
+                connection.execute(
+                    text(
+                        "ALTER TABLE utilisateurs "
+                        "ADD COLUMN derniere_connexion TIMESTAMP NULL"
+                    )
+                )
+
+            if "niveau_acces" not in utilisateur_columns:
+                connection.execute(
+                    text(
+                        "ALTER TABLE utilisateurs "
+                        "ADD COLUMN niveau_acces INTEGER NULL"
+                    )
+                )
+
+            if "derniere_action" not in utilisateur_columns:
+                connection.execute(
+                    text(
+                        "ALTER TABLE utilisateurs "
+                        "ADD COLUMN derniere_action VARCHAR NULL"
+                    )
+                )
+
+    if "reservations" in table_names:
+        reservation_columns_2 = {
+            column["name"] for column in inspector.get_columns("reservations")
+        }
+
+        with engine.begin() as connection:
+            if "date_creation" not in reservation_columns_2:
+                connection.execute(
+                    text(
+                        "ALTER TABLE reservations "
+                        "ADD COLUMN date_creation TIMESTAMP NOT NULL DEFAULT NOW()"
+                    )
+                )
+
+            if "date_modification" not in reservation_columns_2:
+                connection.execute(
+                    text(
+                        "ALTER TABLE reservations "
+                        "ADD COLUMN date_modification TIMESTAMP NULL"
+                    )
+                )
+
+    if "logs_acces" in table_names:
+        log_columns = {
+            column["name"] for column in inspector.get_columns("logs_acces")
+        }
+
+        if "details" not in log_columns:
+            with engine.begin() as connection:
+                connection.execute(
+                    text("ALTER TABLE logs_acces ADD COLUMN details VARCHAR NULL")
+                )
+
+    if "notifications" in table_names:
+        notification_columns = {
+            column["name"] for column in inspector.get_columns("notifications")
+        }
+
+        with engine.begin() as connection:
+            if "sujet" not in notification_columns:
+                connection.execute(
+                    text("ALTER TABLE notifications ADD COLUMN sujet VARCHAR NULL")
+                )
+
+            if "type" not in notification_columns:
+                connection.execute(
+                    text("ALTER TABLE notifications ADD COLUMN type VARCHAR(50) NULL")
+                )
+
+            if "est_envoyee" not in notification_columns:
+                connection.execute(
+                    text(
+                        "ALTER TABLE notifications "
+                        "ADD COLUMN est_envoyee BOOLEAN NOT NULL DEFAULT TRUE"
+                    )
+                )
+
+    if "donnees_faciales" in table_names:
+        donnee_columns = {
+            column["name"] for column in inspector.get_columns("donnees_faciales")
+        }
+
+        if "est_chiffre" not in donnee_columns:
+            with engine.begin() as connection:
+                connection.execute(
+                    text(
+                        "ALTER TABLE donnees_faciales "
+                        "ADD COLUMN est_chiffre BOOLEAN NOT NULL DEFAULT FALSE"
                     )
                 )
 
@@ -166,12 +267,11 @@ def ensure_default_admin() -> None:
                 return
 
         if admin is None:
-            admin = Utilisateur(
+            admin = Administrateur(
                 prenom=DEFAULT_ADMIN_PRENOM,
                 nom=DEFAULT_ADMIN_NOM,
                 email=DEFAULT_ADMIN_EMAIL,
                 mot_de_passe_hash=hash_password(DEFAULT_ADMIN_PASSWORD),
-                role="admin",
                 actif=True,
             )
             db.add(admin)
@@ -190,6 +290,46 @@ def ensure_default_admin() -> None:
 
         if updated:
             db.commit()
+    finally:
+        db.close()
+
+
+def encrypt_existing_face_encodings() -> None:
+    """Chiffre les encodages faciaux deja stockes en clair."""
+    db = SessionLocal()
+
+    try:
+        donnees_a_chiffrer = (
+            db.query(DonneeFaciale)
+            .filter(DonneeFaciale.est_chiffre == False)
+            .all()
+        )
+
+        for donnee in donnees_a_chiffrer:
+            if donnee.encodage_facial is None:
+                continue
+            donnee.encodage_facial = encrypt_encoding(donnee.encodage_facial)
+            donnee.est_chiffre = True
+
+        db.commit()
+    finally:
+        db.close()
+
+
+def mark_terminated_reservations() -> None:
+    """Marque comme TERMINEE les reservations confirmees dont la date est passee."""
+    db = SessionLocal()
+
+    try:
+        aujourd_hui = date.today()
+        db.query(Reservation).filter(
+            Reservation.statut == StatutReservation.CONFIRMEE.value,
+            Reservation.date_reservation < aujourd_hui,
+        ).update(
+            {Reservation.statut: StatutReservation.TERMINEE.value},
+            synchronize_session=False,
+        )
+        db.commit()
     finally:
         db.close()
 

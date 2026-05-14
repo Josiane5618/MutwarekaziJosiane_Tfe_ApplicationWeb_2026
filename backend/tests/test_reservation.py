@@ -45,7 +45,7 @@ def create_salle(db_session, nom="Salle test"):
         nom=nom,
         description="Salle de test",
         capacite=10,
-        active=True
+        est_active=True
     )
     db_session.add(salle)
     db_session.commit()
@@ -67,7 +67,7 @@ def create_reservation(
     reservation = Reservation(
         utilisateur_id=user_id,
         salle_id=salle.id,
-        date=reservation_date or future_date(),
+        date_reservation=reservation_date or future_date(),
         heure_debut=start,
         heure_fin=end
     )
@@ -124,7 +124,7 @@ def test_user_reservations_include_confirmed_status(db_session):
             "id": reservation.id,
             "utilisateur_id": user.id,
             "salle_id": reservation.salle_id,
-            "date": reservation.date.isoformat(),
+            "date": reservation.date_reservation.isoformat(),
             "heure_debut": "09:00:00",
             "heure_fin": "10:00:00",
             "statut": StatutReservation.CONFIRMEE.value,
@@ -264,7 +264,7 @@ def test_user_can_update_own_reservation(db_session, monkeypatch):
     assert response["email_envoye"] is False
     assert response["email_mode"] == "console"
     assert reservation.salle_id == new_salle.id
-    assert reservation.date == future_date(days=31)
+    assert reservation.date_reservation == future_date(days=31)
     assert reservation.heure_debut == time(11, 0)
     assert reservation.heure_fin == time(12, 0)
     assert notification is not None
@@ -372,7 +372,7 @@ def test_create_reservation_rejects_past_date(db_session):
 def test_create_reservation_rejects_inactive_room(db_session):
     user = create_user(db_session, "owner@example.com")
     salle = create_salle(db_session)
-    salle.active = False
+    salle.est_active = False
     db_session.commit()
 
     with pytest.raises(HTTPException) as exc_info:

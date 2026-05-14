@@ -11,6 +11,7 @@ if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
 from app.database import Base  # noqa: E402
+from app.models.administrateur import Administrateur  # noqa: F401, E402
 from app.models.demande_inscription import DemandeInscription  # noqa: F401, E402
 from app.models.donnee_faciale import DonneeFaciale  # noqa: F401, E402
 from app.models.log_acces import LogAcces  # noqa: F401, E402
