@@ -85,7 +85,7 @@ Quand une comparaison faciale doit être faite, l'encodage est déchiffré en m�
 
 ### Robustesse Des Mots De Passe
 
-Pour limiter les mots de passe trop faciles à deviner, le backend impose à l'inscription et lors d'un changement de mot de passe les règles suivantes :
+Mon cahier des charges n'imposait pas de règles particulières pour les mots de passe, mais j'ai préféré ajouter une validation minimale pour limiter les mots de passe trop faciles à deviner. À l'inscription et lors d'un changement de mot de passe, le backend exige :
 
 - au moins 8 caractères
 - au moins une lettre majuscule
