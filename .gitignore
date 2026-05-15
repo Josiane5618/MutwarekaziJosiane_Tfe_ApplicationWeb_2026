@@ -12,6 +12,8 @@ __pycache__/
 .codex
 .codex/
 
+.venv/
+venv/
 backend/venv/
 backend/.venv/
 frontend/node_modules/
