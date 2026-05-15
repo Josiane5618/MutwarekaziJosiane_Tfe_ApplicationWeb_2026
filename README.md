@@ -384,6 +384,50 @@ Quelques éléments restent volontairement simplifiés :
 
 Globalement, le code suit donc bien l'idée du diagramme de classes, mais il l'adapte à une architecture web plus simple : les données sont dans les modèles SQLAlchemy, et les actions sont dans les routes FastAPI.
 
+## Décisions Techniques
+
+Pendant le développement, j'ai dû faire plusieurs choix techniques qui ne sont pas évidents quand on lit seulement le code. Voici les principales décisions et la raison de chaque choix.
+
+### PostgreSQL plutôt que SQLite
+
+Pendant mon stage, j'avais utilisé SQLite parce que l'application était locale et mono-utilisateur. Pour ce projet, l'application est une application web qui doit gérer plusieurs utilisateurs en parallèle, des contraintes plus strictes sur les types de données, et un fonctionnement plus proche d'un vrai déploiement. PostgreSQL est mieux adapté à ce contexte. C'est aussi la base de données la plus utilisée pour ce genre d'application web, donc cela m'a permis de me familiariser avec un outil que je retrouverai probablement plus tard.
+
+### FastAPI plutôt que Flask
+
+J'ai préféré FastAPI à Flask principalement pour trois raisons :
+
+- la validation automatique des données entrantes grâce à Pydantic, ce qui évite d'écrire à la main beaucoup de code de vérification
+- la génération automatique de la documentation OpenAPI / Swagger, accessible directement sur `/docs`, qui m'a beaucoup aidée pendant le développement
+- une syntaxe moderne basée sur les annotations de type Python
+
+FastAPI reste lisible quand on le compare à Flask, et le projet n'est pas tellement plus compliqué à comprendre.
+
+### Héritage de table unique pour Administrateur
+
+Le diagramme prévoit `Administrateur` comme une spécialisation de `Utilisateur`. Plutôt que de créer une table séparée, j'ai utilisé l'héritage de table unique de SQLAlchemy : une seule table `utilisateurs`, et la colonne `role` sert à distinguer les deux types. Cette solution évite de dupliquer les informations communes et garde une seule logique d'authentification. C'est expliqué plus en détail dans la section sur le diagramme de classes.
+
+### Fernet pour le chiffrement des données biométriques
+
+Pour chiffrer les encodages faciaux, j'ai utilisé Fernet plutôt que d'implémenter AES directement. Fernet est une recette toute faite proposée par la librairie `cryptography` qui combine déjà :
+
+- AES en mode CBC avec un IV aléatoire
+- un HMAC pour vérifier l'intégrité
+- un encodage en base64
+
+Cela évite de me tromper dans la gestion du vecteur d'initialisation, du padding ou du MAC, qui sont des erreurs classiques quand on implémente le chiffrement à la main. Fernet est aussi recommandé dans la documentation officielle de `cryptography` pour ce type d'usage.
+
+### Pas de migrations Alembic pour l'instant
+
+Je n'ai pas utilisé Alembic. À la place, j'ai écrit une fonction `bootstrap_database` qui crée les tables au premier démarrage et ajoute les colonnes manquantes au fur et à mesure des évolutions du schéma. C'est plus simple et suffisant pour un projet de cette taille, mais ce n'est pas une vraie stratégie de migration : on ne peut pas revenir en arrière, et tout est dans une seule fonction.
+
+Pour une vraie mise en production, Alembic serait nécessaire. C'est noté dans les points à améliorer plus tard.
+
+### Seuil de comparaison faciale à 0.5
+
+Le seuil de 0.5 vient des recommandations habituelles autour de `dlib` et `face_recognition` : en-dessous de cette distance, on considère que les deux visages appartiennent à la même personne, au-dessus on considère qu'il s'agit de personnes différentes. Plus la distance est basse, plus la correspondance est stricte.
+
+J'ai gardé cette valeur par défaut parce qu'elle donne un bon compromis entre faux positifs et faux négatifs sur les visages que j'ai testés. Dans une vraie installation, il faudrait pouvoir ajuster ce seuil en fonction de la qualité des caméras et de l'éclairage.
+
 ## État Actuel
 
 Aujourd'hui, l'application couvre les principaux cas prévus :
