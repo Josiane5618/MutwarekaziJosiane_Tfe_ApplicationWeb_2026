@@ -12,7 +12,7 @@ import {
 } from "../api/api";
 import CameraCapture from "./CameraCapture";
 
-function formatAccountStatus(status, active) {
+export function formatAccountStatus(status, active) {
   if (status === "ACTIF" || active) {
     return "Actif";
   }
@@ -24,7 +24,7 @@ function formatAccountStatus(status, active) {
   return "En attente";
 }
 
-function formatReservationStatus(status) {
+export function formatReservationStatus(status) {
   return status === "ANNULEE" ? "Annulée" : "Confirmée";
 }
 
@@ -57,7 +57,7 @@ function formatDateFr(value) {
   });
 }
 
-function formatTimeFr(value) {
+export function formatTimeFr(value) {
   if (!value) {
     return "heure non renseignée";
   }
@@ -102,7 +102,7 @@ function normalizeTimeForComparison(value) {
   return value?.slice(0, 5) || "";
 }
 
-function findConfirmedReservationConflict({
+export function findConfirmedReservationConflict({
   reservations,
   reservationIdToIgnore = null,
   salleId,
@@ -141,7 +141,7 @@ function getTodayInputValue() {
   return `${year}-${month}-${day}`;
 }
 
-function getDatePartsFromIso(value) {
+export function getDatePartsFromIso(value) {
   if (!value) {
     return {
       day: "",
@@ -175,7 +175,7 @@ function getTimeParts(value) {
   };
 }
 
-function buildIsoDate({ day, month, year }) {
+export function buildIsoDate({ day, month, year }) {
   if (!day || !month || !year) {
     return "";
   }
@@ -183,7 +183,7 @@ function buildIsoDate({ day, month, year }) {
   return `${year}-${month}-${day}`;
 }
 
-function buildTimeValue({ hour, minute }) {
+export function buildTimeValue({ hour, minute }) {
   if (!hour || !minute) {
     return "";
   }
