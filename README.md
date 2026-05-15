@@ -48,6 +48,20 @@ Il peut aussi consulter et gérer :
 - toutes les réservations
 - les logs d'accès
 
+Le cahier des charges ne demandait pas explicitement la gestion des comptes administrateurs entre eux, mais j'ai préféré l'ajouter pour éviter qu'un seul administrateur bloque tout le système s'il perd son accès ou s'il oublie son mot de passe. L'administrateur peut donc aussi :
+
+- promouvoir un utilisateur actif en administrateur
+- retirer les droits d'un autre administrateur
+- activer ou désactiver le compte d'un utilisateur
+
+Pour ne pas créer de blocage, j'ai mis quelques garde-fous :
+
+- un administrateur ne peut pas modifier son propre rôle ni désactiver son propre compte
+- on ne peut pas retirer les droits du dernier administrateur actif
+- seul un compte actif peut être promu administrateur
+
+À chaque changement de rôle ou de statut, l'utilisateur concerné reçoit une notification dans l'application, et un email si l'envoi SMTP est activé.
+
 ### Accès Au Bâtiment
 
 Une fois connecté, l'utilisateur peut demander l'accès au bâtiment. Il capture son visage, puis le backend compare cette capture avec les données enregistrées lors de l'inscription.
@@ -58,6 +72,16 @@ Le résultat peut être :
 - `Accès refusé`
 
 Chaque tentative est enregistrée dans les logs d'accès. Le seuil actuel de comparaison faciale est fixé à `0.5` dans le backend. Plus la distance est basse, plus les deux visages sont considérés proches.
+
+### Sécurité Des Données Biométriques
+
+Le visage capturé pendant l'inscription est transformé par le backend en un vecteur de 128 nombres, ce qu'on appelle l'encodage facial. Cet encodage est une donnée biométrique sensible et ne doit pas pouvoir être lu directement dans la base de données.
+
+Dans mon cahier des charges, je voulais garder pour ce projet la protection des données biométriques par chiffrement, déjà mise en place pendant le stage. J'ai donc choisi de chiffrer l'encodage facial avant de l'enregistrer, avec Fernet (fourni par la librairie `cryptography`), qui combine AES-128 et HMAC-SHA256.
+
+La clé n'est pas écrite dans le code. Elle est lue depuis le fichier `backend/.env` à travers la variable `BIOMETRIC_ENCRYPTION_KEY`. Au démarrage de l'application, les anciens encodages qui étaient encore en clair sont chiffrés automatiquement, puis marqués comme tels grâce à la colonne `est_chiffre`.
+
+Quand une comparaison faciale doit être faite, l'encodage est déchiffré en mémoire le temps du calcul, mais il n'est jamais réécrit en clair dans la base.
 
 ### Réservations
 
@@ -75,18 +99,27 @@ Le backend vérifie les conflits de créneaux pour éviter deux réservations au
 
 L'utilisateur peut mettre à jour son profil : prénom, nom, email et éventuellement son mot de passe.
 
-Les notifications servent à informer l'utilisateur après certaines actions, comme une validation, une réservation ou une tentative d'accès.
+Mon cahier des charges prévoyait uniquement un envoi d'emails pour les décisions d'inscription, sans notification métier centrale. J'ai pourtant ajouté un système simple de notifications dans l'application : chaque utilisateur retrouve dans son tableau de bord les messages qui le concernent (validation de son inscription, réservation, tentative d'accès au bâtiment, changement de rôle ou de statut).
 
-### Emails De Validation
+J'ai préféré cette solution parce que l'envoi SMTP n'est pas toujours activé pendant la démonstration. Une notification visible dans l'interface garantit que l'utilisateur voit toujours ce qui le concerne, même quand aucun email n'est envoyé.
 
-Quand l'administrateur accepte ou refuse une inscription, le backend peut aussi envoyer un email.
+### Emails Automatiques
+
+Mon cahier des charges prévoyait l'envoi d'emails uniquement après acceptation ou refus d'une demande d'inscription. J'ai étendu cette logique à d'autres événements importants pour un système d'accès au bâtiment, parce qu'il m'a semblé utile que l'utilisateur soit prévenu chaque fois qu'une décision le concernant est prise.
+
+Le backend peut donc envoyer un email automatique dans les cas suivants :
+
+- acceptation ou refus d'une demande d'inscription (cas prévu par le cahier des charges)
+- tentative d'accès au bâtiment (autorisée ou refusée)
+- activation ou désactivation manuelle du compte par un administrateur
+- changement de rôle (promotion ou rétrogradation administrateur)
 
 Pour garder le projet simple pendant le développement, l'envoi SMTP est désactivé par défaut. Dans ce cas, l'email est affiché dans le terminal du backend.
 
-Pour tester un vrai envoi local sans envoyer de vrais emails, on peut utiliser Mailpit :
+Pour tester un vrai envoi local sans envoyer de vrais emails, on peut utiliser Mailpit. Sur Windows, j'ai préparé un script qui le lance avec la bonne configuration :
 
-```bash
-mailpit
+```powershell
+.\start-mailpit.bat
 ```
 
 Mailpit reçoit les emails sur le port SMTP `1025` et permet de les voir dans le navigateur :
@@ -170,14 +203,30 @@ Des exemples existent aussi avec :
 - `backend/.env.example`
 - `frontend/.env.example`
 
-Dans mon environnement actuel, le backend utilise PostgreSQL sur le port `5433`.
-
 Les emails peuvent être testés localement avec Mailpit. Les variables principales sont :
 
 - `SMTP_ENABLED`
 - `SMTP_HOST`
 - `SMTP_PORT`
 - `SMTP_FROM_EMAIL`
+
+## Base De Données
+
+L'application utilise PostgreSQL. Avant de lancer le backend pour la première fois, il faut :
+
+1. installer PostgreSQL sur la machine
+2. créer une base de données vide qui servira à l'application, par exemple `tfe_gestion_acces`
+3. renseigner la chaîne de connexion dans `backend/.env`, via la variable `DATABASE_URL`
+
+Le format de la chaîne de connexion est :
+
+```text
+DATABASE_URL=postgresql+psycopg://utilisateur:motdepasse@hote:port/nom_de_la_base
+```
+
+Dans mon environnement actuel, j'utilise PostgreSQL sur le port `5433` parce que le port `5432` était déjà occupé par une autre installation.
+
+Au premier démarrage du backend, les tables sont créées automatiquement par le code, dans la fonction `bootstrap_database`. Les colonnes ajoutées plus tard sont également créées par le même mécanisme, ce qui évite d'avoir à exécuter des scripts SQL à la main. Cette approche reste simple, mais elle ne remplace pas une vraie stratégie de migration (voir « Points À Améliorer Plus Tard »).
 
 ## Compte Administrateur
 
@@ -229,6 +278,14 @@ Pour installer `uv` sous Windows :
 ```powershell
 winget install --id=astral-sh.uv -e
 ```
+
+Pour le frontend, il faut aussi avoir Node.js installé (version 22 ou plus). Sous Windows :
+
+```powershell
+winget install --id=OpenJS.NodeJS.LTS -e
+```
+
+Après l'installation, il peut être nécessaire de fermer puis rouvrir le terminal pour que `npm` soit reconnu.
 
 La partie la plus sensible sous Windows est `dlib`, car cette dépendance peut parfois demander des outils natifs supplémentaires. Le reste du projet est plus classique.
 
@@ -302,15 +359,17 @@ Par exemple :
 - `consulterLogsAcces()` correspond à `/admin/access-logs`
 - `consulterToutesReservations()` correspond à `/admin/reservations`
 
-La principale différence est la classe `Administrateur`. Dans le code, il n'y a pas une table séparée `Administrateur`. Un administrateur est un `Utilisateur` avec le rôle `admin`. C'est une simplification volontaire, car cela évite de dupliquer les informations communes comme le nom, l'email et le mot de passe.
+La classe `Administrateur` du diagramme est représentée dans le code comme une spécialisation de `Utilisateur`. Concrètement, j'ai utilisé l'héritage de table unique (single-table inheritance) proposé par SQLAlchemy : il n'y a qu'une seule table `utilisateurs` en base de données, et la colonne `role` sert à distinguer un administrateur d'un utilisateur standard.
 
-Le diagramme de classes présente l'administrateur comme une spécialisation de l'utilisateur, mais il montre aussi une énumération `Role` avec les valeurs `UTILISATEUR` et `ADMINISTRATEUR`. Il y a donc déjà l'idée qu'un utilisateur possède un rôle. Dans le code, cette spécialisation est représentée par l'attribut `role`. Quand `role` vaut `admin`, l'utilisateur a accès aux routes d'administration.
+J'ai préféré cette solution plutôt qu'une table séparée parce qu'elle évite de dupliquer les informations communes (nom, email, mot de passe) et garde l'authentification simple : on cherche toujours dans la même table, puis on vérifie le rôle. Cela reste cohérent avec le diagramme, qui présente déjà une énumération `Role` avec les valeurs `UTILISATEUR` et `ADMINISTRATEUR`.
 
-Les actions propres à l'administrateur, comme traiter les demandes, consulter les logs ou gérer les salles, sont donc placées dans les routes `/admin`. Ces routes sont protégées et ne sont accessibles qu'aux comptes ayant le rôle `admin`.
+La classe `Administrateur` ajoute néanmoins les éléments spécifiques prévus par le diagramme :
 
-Cette solution est plus simple pour une application web et garde la même logique métier : l'administrateur reste un utilisateur, mais avec plus de droits.
+- `niveau_acces` : permet de réserver la possibilité de différencier plus tard plusieurs niveaux d'administration
+- `derniere_action` : conserve une trace simple de la dernière opération effectuée
+- des méthodes métier comme `traiter_demandes`, `consulter_tous_logs`, `consulter_toutes_reservations`, `activer_desactiver_utilisateur` ou `gerer_salles`, qui reprennent les opérations attendues du diagramme
 
-J'aurais pu créer une vraie classe `Administrateur` avec de l'héritage, mais cela aurait rendu la base de données et l'authentification plus compliquées. Pour ce projet, j'ai donc choisi une solution plus légère et plus facile à expliquer.
+Dans la pratique, la plus grande partie de la logique reste portée par les routes FastAPI sous `/admin`, parce qu'une application web s'organise plus naturellement autour de ses routes que de ses méthodes de classe. Ces routes sont protégées et ne sont accessibles qu'aux comptes ayant le rôle `admin`.
 
 Le premier administrateur est créé automatiquement par le backend avec les variables de configuration. Il n'est pas créé par le formulaire public d'inscription.
 
@@ -319,9 +378,8 @@ Le premier administrateur est créé automatiquement par le backend avec les var
 Quelques éléments restent volontairement simplifiés :
 
 - il n'y a pas encore de vraie migration de base de données avec Alembic
-- le tableau administrateur pourrait encore être organisé avec des onglets
 - certains noms techniques suivent le style Python, donc `date_soumission` au lieu de `dateSoumission`
-- la classe `Administrateur` est représentée par un rôle, pas par une table séparée
+- la classe `Administrateur` utilise l'héritage de table unique plutôt qu'une table séparée
 - les emails sont testables en local avec SMTP, mais pas configurés pour un service externe réel
 
 Globalement, le code suit donc bien l'idée du diagramme de classes, mais il l'adapte à une architecture web plus simple : les données sont dans les modèles SQLAlchemy, et les actions sont dans les routes FastAPI.
@@ -343,12 +401,14 @@ Aujourd'hui, l'application couvre les principaux cas prévus :
 - gestion administrateur des utilisateurs et des salles
 - consultation des réservations et des logs d'accès
 - consultation de la photo faciale par l'administrateur
+- chiffrement des encodages faciaux en base de données
+- promotion ou rétrogradation des administrateurs, avec garde-fous
+- emails automatiques étendus aux tentatives d'accès et aux changements de compte
 
-Il reste surtout à améliorer la présentation de certaines parties de l'interface, notamment le tableau de bord administrateur, pour qu'il soit plus agréable à utiliser pendant une démonstration.
+Il reste surtout à finir de soigner la présentation de certaines parties de l'interface.
 
 ## Points À Améliorer Plus Tard
 
-- organiser le tableau administrateur avec des onglets
 - améliorer encore les textes et l'ergonomie de l'interface
 - préparer un jeu de données propre pour la démonstration
 - ajouter une vraie stratégie de migration de base de données
