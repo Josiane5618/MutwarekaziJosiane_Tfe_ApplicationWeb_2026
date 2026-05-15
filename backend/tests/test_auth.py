@@ -38,7 +38,7 @@ def test_register_creates_inactive_user_with_face_data(db_session, monkeypatch):
             prenom="Josiane",
             nom="Mutwarekazi",
             email="josiane@example.com",
-            password="motdepasse123",
+            password="MotDePasse123",
             file=upload,
             db=db_session
         )
@@ -177,7 +177,7 @@ def test_update_me_updates_current_user_profile(db_session, monkeypatch):
             prenom="Nouveau",
             nom="Profil",
             email="new@example.com",
-            password="nouveau-secret"
+            password="NouveauSecret123"
         ),
         db=db_session,
         user={"user_id": user.id, "role": "utilisateur"}
@@ -188,7 +188,7 @@ def test_update_me_updates_current_user_profile(db_session, monkeypatch):
     assert response["prenom"] == "Nouveau"
     assert response["nom"] == "Profil"
     assert response["email"] == "new@example.com"
-    assert user.mot_de_passe_hash == "hashed-nouveau-secret"
+    assert user.mot_de_passe_hash == "hashed-NouveauSecret123"
 
 
 def test_update_me_rejects_email_already_used_by_another_user(db_session):

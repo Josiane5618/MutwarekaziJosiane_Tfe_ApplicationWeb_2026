@@ -83,6 +83,17 @@ La clé n'est pas écrite dans le code. Elle est lue depuis le fichier `backend/
 
 Quand une comparaison faciale doit être faite, l'encodage est déchiffré en mémoire le temps du calcul, mais il n'est jamais réécrit en clair dans la base.
 
+### Robustesse Des Mots De Passe
+
+Pour limiter les mots de passe trop faciles à deviner, le backend impose à l'inscription et lors d'un changement de mot de passe les règles suivantes :
+
+- au moins 8 caractères
+- au moins une lettre majuscule
+- au moins une lettre minuscule
+- au moins un chiffre
+
+Si un mot de passe ne respecte pas ces règles, l'API renvoie une erreur 400 avec un message explicite indiquant la règle violée. Côté stockage, le mot de passe n'est jamais conservé en clair : il est haché avec bcrypt (avec un sel généré aléatoirement) avant d'être enregistré en base.
+
 ### Réservations
 
 L'utilisateur connecté peut :
@@ -448,6 +459,7 @@ Aujourd'hui, l'application couvre les principaux cas prévus :
 - chiffrement des encodages faciaux en base de données
 - promotion ou rétrogradation des administrateurs, avec garde-fous
 - emails automatiques étendus aux tentatives d'accès et aux changements de compte
+- validation de la robustesse des mots de passe à l'inscription et au changement de mot de passe
 
 Il reste surtout à finir de soigner la présentation de certaines parties de l'interface.
 

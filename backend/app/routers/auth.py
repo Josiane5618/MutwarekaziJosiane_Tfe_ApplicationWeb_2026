@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from datetime import datetime
 
@@ -15,7 +15,12 @@ from app.schemas.user import UserLogin
 from app.face_recognition.engine import extract_face_encoding
 from app.security.biometric_cipher import encrypt_encoding
 from app.security.dependencies import get_current_user
-from app.security.password import hash_password, verify_password
+from app.security.password import (
+    hash_password,
+    verify_password,
+    validate_password_strength,
+    PasswordTooWeakError,
+)
 from app.security.jwt import create_access_token
 
 router = APIRouter(
@@ -29,6 +34,17 @@ class ProfileUpdate(BaseModel):
     nom: str = Field(..., min_length=1)
     email: EmailStr
     password: Optional[str] = Field(default=None, min_length=1)
+
+    @field_validator("password")
+    @classmethod
+    def _password_doit_etre_robuste(cls, value):
+        if value is None or value == "":
+            return value
+        try:
+            validate_password_strength(value)
+        except PasswordTooWeakError as exc:
+            raise ValueError(str(exc)) from exc
+        return value
 
 
 @router.post("/register")
@@ -51,6 +67,11 @@ async def register_user(
             status_code=400,
             detail="Cet email est déjà utilisé"
         )
+
+    try:
+        validate_password_strength(password)
+    except PasswordTooWeakError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     image_bytes = await file.read()
     encoding = extract_face_encoding(image_bytes)
