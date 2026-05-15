@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    name: Tests Backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Installer uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Installer les dependances
+        working-directory: backend
+        run: uv sync
+
+      - name: Lancer pytest
+        working-directory: backend
+        run: uv run pytest -q
