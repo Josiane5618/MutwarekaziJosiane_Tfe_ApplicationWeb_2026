@@ -1289,7 +1289,7 @@ export default function UserDashboard({ token, onLogout }) {
                   <div className="stack-item" key={notification.id}>
                     <p className="request-name">{notification.message}</p>
                     <p className="request-email">
-                      {formatDateTimeFr(notification.date_creation)}
+                      {formatDateTimeFr(notification.date_envoi)}
                     </p>
                   </div>
                 ))}
