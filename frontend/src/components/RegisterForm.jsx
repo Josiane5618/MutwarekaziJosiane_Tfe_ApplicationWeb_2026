@@ -142,12 +142,15 @@ export default function RegisterForm() {
           <input
             name="password"
             type="password"
-            placeholder="Minimum recommandé : un mot de passe fort"
+            placeholder="Votre mot de passe"
             value={form.password}
             onChange={handleChange}
             autoComplete="new-password"
             required
           />
+          <small className="field-helper">
+            Au moins 8 caractères, avec une majuscule, une minuscule et un chiffre.
+          </small>
         </label>
       </div>
 
