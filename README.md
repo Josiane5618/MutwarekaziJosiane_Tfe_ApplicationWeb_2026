@@ -162,9 +162,44 @@ Après la décision administrateur, l'interface affiche aussi si l'email a été
 
 ## Lancer Le Projet
 
-Il faut lancer le backend et le frontend dans deux terminaux séparés.
+L'application est composée de trois services qui doivent tourner en parallèle : Mailpit (serveur SMTP local), le backend FastAPI et le frontend Vite. Pour éviter d'avoir à les lancer un par un, j'ai préparé un script PowerShell qui ouvre les trois services dans des fenêtres séparées.
 
-### Backend
+### Démarrage Rapide Avec Le Script
+
+Depuis PowerShell, à la racine du projet :
+
+```powershell
+.\start.ps1
+```
+
+Depuis Git Bash, il faut passer par `powershell.exe` :
+
+```bash
+powershell.exe -ExecutionPolicy Bypass -File ./start.ps1
+```
+
+Le script `start.ps1` :
+
+- vérifie que `mailpit.exe`, l'environnement virtuel Python et le dossier `frontend/` sont bien présents
+- ouvre trois fenêtres PowerShell séparées, titrées « Mailpit », « Backend » et « Frontend »
+- lance dans chaque fenêtre le bon service (`mailpit.exe`, `python run.py` avec le venv, `npm run dev`)
+- affiche les URL utiles à la fin
+
+Chaque service tourne dans sa propre fenêtre, ce qui permet de voir ses logs séparément et d'arrêter chaque service avec Ctrl+C ou en fermant la fenêtre.
+
+Si la première exécution est bloquée par la stratégie d'exécution PowerShell, il faut autoriser une seule fois les scripts locaux :
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+```
+
+Pré-requis avant le premier lancement : avoir exécuté `uv sync --extra face` dans `backend/` (pour créer le venv) et `npm install` dans `frontend/`.
+
+### Démarrage Manuel
+
+Il reste possible de lancer chaque service à la main dans son propre terminal, ce qui est pratique pour déboguer un service en particulier.
+
+#### Backend
 
 ```bash
 cd backend
@@ -184,7 +219,7 @@ Vérification rapide :
 curl http://127.0.0.1:8000/health
 ```
 
-### Frontend
+#### Frontend
 
 ```bash
 cd frontend
@@ -465,10 +500,8 @@ Il reste surtout à finir de soigner la présentation de certaines parties de l'
 
 ## Points À Améliorer Plus Tard
 
-- améliorer encore les textes et l'ergonomie de l'interface
-- préparer un jeu de données propre pour la démonstration
 - ajouter une vraie stratégie de migration de base de données
-- tester la reconnaissance faciale sur la machine Windows finale
+- utiliser une véritable boîte mail
 
 ## Remarque Personnelle
 
