@@ -181,6 +181,7 @@ powershell.exe -ExecutionPolicy Bypass -File ./start.ps1
 Le script `start.ps1` :
 
 - vérifie que `mailpit.exe`, l'environnement virtuel Python et le dossier `frontend/` sont bien présents
+- vérifie que PostgreSQL répond bien sur le port indiqué dans `backend/.env` (le service Windows PostgreSQL démarre normalement automatiquement au boot, mais cette vérification évite une erreur peu lisible du backend si le service est arrêté)
 - ouvre trois fenêtres PowerShell séparées, titrées « Mailpit », « Backend » et « Frontend »
 - lance dans chaque fenêtre le bon service (`mailpit.exe`, `python run.py` avec le venv, `npm run dev`)
 - affiche les URL utiles à la fin

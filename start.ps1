@@ -28,6 +28,32 @@ Verifier-Chemin $Mailpit "Mailpit introuvable a la racine du projet."
 Verifier-Chemin $VenvPython "Environnement virtuel Python introuvable (executer 'uv sync' dans backend/)."
 Verifier-Chemin (Join-Path $FrontendDir "package.json") "Le dossier frontend/ ne contient pas de package.json."
 
+function Lire-PortPostgres($cheminEnv) {
+    if (-not (Test-Path $cheminEnv)) {
+        return 5432
+    }
+
+    foreach ($ligne in Get-Content $cheminEnv) {
+        if ($ligne -match '^\s*DATABASE_URL\s*=.*@[^:/]+:(\d+)/') {
+            return [int]$Matches[1]
+        }
+    }
+
+    return 5432
+}
+
+$PortPostgres = Lire-PortPostgres (Join-Path $BackendDir ".env")
+Write-Host "[start] Verification de PostgreSQL sur le port $PortPostgres..." -ForegroundColor Cyan
+$postgresOk = Test-NetConnection -ComputerName 127.0.0.1 -Port $PortPostgres -InformationLevel Quiet -WarningAction SilentlyContinue
+
+if (-not $postgresOk) {
+    Write-Host "[ERREUR] PostgreSQL ne repond pas sur 127.0.0.1:$PortPostgres." -ForegroundColor Red
+    Write-Host "  Verifier que le service PostgreSQL est demarre (services.msc) avant de relancer." -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "[start] PostgreSQL repond correctement." -ForegroundColor Green
+
 function Lancer-Service($titre, $repertoire, $commande) {
     Write-Host "[start] Lancement de $titre..." -ForegroundColor Cyan
     $argument = "-NoExit -Command `"`$Host.UI.RawUI.WindowTitle = '$titre'; Set-Location '$repertoire'; $commande`""
