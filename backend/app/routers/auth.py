@@ -22,6 +22,7 @@ from app.security.password import (
     PasswordTooWeakError,
 )
 from app.security.jwt import create_access_token
+from app.utils.dates import to_iso_utc
 
 router = APIRouter(
     prefix="/auth",
@@ -186,11 +187,7 @@ def get_me(
         "role": current_user.role,
         "actif": current_user.actif,
         "statut_compte": current_user.statut_compte,
-        "date_creation": (
-            current_user.date_creation.isoformat()
-            if current_user.date_creation
-            else None
-        ),
+        "date_creation": to_iso_utc(current_user.date_creation),
     }
 
 
@@ -245,9 +242,5 @@ def update_me(
         "role": current_user.role,
         "actif": current_user.actif,
         "statut_compte": current_user.statut_compte,
-        "date_creation": (
-            current_user.date_creation.isoformat()
-            if current_user.date_creation
-            else None
-        ),
+        "date_creation": to_iso_utc(current_user.date_creation),
     }

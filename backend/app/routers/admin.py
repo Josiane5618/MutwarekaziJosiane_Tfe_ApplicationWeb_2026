@@ -16,6 +16,7 @@ from app.models.utilisateur import Utilisateur
 from app.models.notification import Notification
 from app.security.dependencies import get_current_admin
 from app.config import SMTP_ENABLED
+from app.utils.dates import to_iso_utc
 from app.utils.email_service import send_email
 
 router = APIRouter(
@@ -59,9 +60,7 @@ def serialize_user(user: Utilisateur):
         "role": user.role,
         "actif": user.actif,
         "statut_compte": user.statut_compte,
-        "date_creation": (
-            user.date_creation.isoformat() if user.date_creation else None
-        ),
+        "date_creation": to_iso_utc(user.date_creation),
         "demande_inscription": serialize_demande_inscription(user),
         "donnees_faciales_enregistrees": bool(
             user.donnees_faciales and user.donnees_faciales.image_path
@@ -107,12 +106,8 @@ def serialize_demande_inscription(user: Utilisateur):
     return {
         "id": demande.id,
         "statut": demande.statut,
-        "date_soumission": demande.date_soumission.isoformat(),
-        "date_traitement": (
-            demande.date_traitement.isoformat()
-            if demande.date_traitement
-            else None
-        ),
+        "date_soumission": to_iso_utc(demande.date_soumission),
+        "date_traitement": to_iso_utc(demande.date_traitement),
         "commentaire_refus": demande.commentaire_refus,
     }
 
@@ -123,12 +118,8 @@ def serialize_registration_request(demande: DemandeInscription):
     return {
         "id": demande.id,
         "statut": demande.statut,
-        "date_soumission": demande.date_soumission.isoformat(),
-        "date_traitement": (
-            demande.date_traitement.isoformat()
-            if demande.date_traitement
-            else None
-        ),
+        "date_soumission": to_iso_utc(demande.date_soumission),
+        "date_traitement": to_iso_utc(demande.date_traitement),
         "commentaire_refus": demande.commentaire_refus,
         "utilisateur": {
             "id": user.id,
@@ -168,7 +159,7 @@ def serialize_reservation(reservation: Reservation):
 def serialize_access_log(log: LogAcces):
     return {
         "id": log.id,
-        "date_acces": log.horodatage.isoformat(),
+        "date_acces": to_iso_utc(log.horodatage),
         "resultat": log.resultat,
         "distance": log.score_confiance,
         "utilisateur": {
